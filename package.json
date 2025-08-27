@@ -3,18 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "backend": "node server.js",
+    "frontend": "next dev",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest",
+    "clean": "rmdir /s /q .next 2>nul || echo \"Clean completed\""
   },
   "dependencies": {
     "next": "^14.2.18",
-    "playroomkit": "^0.0.83",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^2.13.3"
+    "recharts": "^2.13.3",
+    "concurrently": "^8.2.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

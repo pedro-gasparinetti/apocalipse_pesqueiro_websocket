@@ -1,7 +1,7 @@
 import React from 'react'
 import { GameState } from '../types/GameState';
 import Jogador from './Jogador';
-import { PlayerState } from 'playroomkit';
+import { PlayerState } from '../types/SocketTypes';
 import { PEIXES_CESTO } from '../types/Constants';
 
 type ConfiguracoesProps = {

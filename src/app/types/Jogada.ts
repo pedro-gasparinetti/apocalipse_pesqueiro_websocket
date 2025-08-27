@@ -1,4 +1,4 @@
-import { PlayerProfile, PlayerState } from "playroomkit";
+import { PlayerProfile, PlayerState } from "./SocketTypes";
 
 export type Jogada = {
   idJogador: string;

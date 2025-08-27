@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Rodada } from '../types/Rodada'
-import { PlayerState } from 'playroomkit';
+import { PlayerState } from '../types/SocketTypes';
 import { PEIXES_CESTO } from '../types/Constants';
 
 type IntrucoesProps = {

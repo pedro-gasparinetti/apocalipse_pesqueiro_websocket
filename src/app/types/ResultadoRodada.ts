@@ -1,4 +1,4 @@
-import { PlayerProfile } from "playroomkit";
+import { PlayerProfile } from "./SocketTypes";
 import { Jogada } from "./Jogada";
 
 export type ResultadoRodada = {

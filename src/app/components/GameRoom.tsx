@@ -1,5 +1,5 @@
 
-import { insertCoin, isHost, myPlayer, onPlayerJoin, PlayerProfile, PlayerState, RPC, useMultiplayerState, usePlayersList, usePlayersState } from 'playroomkit';
+import { insertCoin, isHost, myPlayer, onPlayerJoin, PlayerProfile, PlayerState, RPC, useMultiplayerState, usePlayersList, usePlayersState } from '../lib/socket-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Jogador from './Jogador';
 import Tabela from './Tabela';
@@ -98,7 +98,7 @@ export default function GameRoom() {
   useEffect(() => {
 
     RPC.register('jogadaRealizada', async (data: any, caller: PlayerState) => {
-      caller?.setState(RESULTADO_JOGADA, null, true);
+      console.log('[DEBUG] Jogada realizada por:', caller?.getProfile().name, 'data:', data);
       caller?.setState(JOGADA_PENDENTE, data, true);
     });
 
@@ -125,12 +125,22 @@ export default function GameRoom() {
 
   useEffect(() => {
     //processamento das jogadas pendentes quando todas jogadas foram realizadas
+    console.log('[DEBUG] useEffect chamado - isHost():', isHost());
     if (isHost()) {
       console.log('eu sou o host');
       const jogadasNaoRealizadas = jogadasPendentes.filter((jogada) => jogada.state == null);
+      console.log('[DEBUG] Total jogadas pendentes:', jogadasPendentes.length);
+      console.log('[DEBUG] Jogadas não realizadas:', jogadasNaoRealizadas.length);
+      console.log('[DEBUG] Total jogadores:', jogadores.length);
+      console.log('[DEBUG] jogadasPendentes:', jogadasPendentes.map(j => ({ 
+        player: j.player.getProfile().name, 
+        state: j.state 
+      })));
+      
       const novoGameState = { ...gameState };
-      if (jogadasNaoRealizadas.length == 0) {
-        console.log('todas jogadas realizadas');
+      if (jogadasPendentes.length > 0 && jogadasNaoRealizadas.length == 0 && jogadasPendentes.length == jogadores.length) {
+        console.log('[DEBUG] Todas jogadas realizadas - processando rodada');
+        console.log('[DEBUG] Esperamos', jogadores.length, 'jogadas, temos', jogadasPendentes.length);
         const rodadaAtual: Rodada = {
           numero: gameState.rodadas.length + 1,
           quantidadeLagoInicial: gameState.quantidadePeixesLago,
@@ -213,6 +223,7 @@ export default function GameRoom() {
             resultadoJogadaJogador.roubou = true;
 
             jogadaPendente.player.setState(RESULTADO_JOGADA, resultadoJogadaJogador, true);
+            console.log('[DEBUG] Resultado definido para jogador fiscalizado', jogadaPendente.player.getProfile().name, ':', resultadoJogadaJogador);
 
             //rateia peixes entre os jogadores que fiscalizaram
             jogadoresFiscalizados[jogadaPendente.player.id].forEach((fiscalizador) => {
@@ -251,6 +262,7 @@ export default function GameRoom() {
             resultadoJogadaJogador.crescimentoLago = rodadaAtual.crescimentoLago;
 
             jogadaPendente.player.setState(RESULTADO_JOGADA, resultadoJogadaJogador, true);
+            console.log('[DEBUG] Resultado definido para jogador normal', jogadaPendente.player.getProfile().name, ':', resultadoJogadaJogador);
 
             //incrementa a banca com o custo da fiscalizacao
             novoGameState.quantidadeBanca += jogadaPendente.state.jogadorAFiscalizar ? gameState.custoFiscalizacao : 0;
@@ -279,16 +291,16 @@ export default function GameRoom() {
         //atualiza o game state com a rodada atual
         novoGameState.rodadas.push(rodadaAtual);
         novoGameState.jogoFinalizado = (rodadaAtual.numero == gameState.limiteRodadas) || rodadaAtual.quantidadeLagoFinal < 1;
+        
+        //processamento das mensagens pendentes
+        /*console.log('mensagensPendentes:', mensagensPendentes.length);                      
+        mensagensPendentes.forEach((mensagemPendente) => {
+          novoGameState.conteudoChat += `${mensagemPendente.player.getProfile().name}: ${mensagemPendente.mensagem} \n`;
+          mensagemPendente.player.setState(MENSAGEM_PENDENTE, null, true);
+        });*/
+
+        setGameState(novoGameState, true);
       }
-
-      //processamento das mensagens pendentes
-      /*console.log('mensagensPendentes:', mensagensPendentes.length);                      
-      mensagensPendentes.forEach((mensagemPendente) => {
-        novoGameState.conteudoChat += `${mensagemPendente.player.getProfile().name}: ${mensagemPendente.mensagem} \n`;
-        mensagemPendente.player.setState(MENSAGEM_PENDENTE, null, true);
-      });*/
-
-      setGameState(novoGameState, true);
     }
 
   }, [gameState, jogadasPendentes, jogadores, mensagensPendentes, setGameState]);
@@ -469,7 +481,7 @@ export default function GameRoom() {
         ) : null}
       </div>
 
-      <Cabecalho gameState={gameState} jogador={myPlayer()} ></Cabecalho>
+      <Cabecalho gameState={gameState} jogador={myPlayer()!} ></Cabecalho>
       <div className="w-full mb-4 flex justify-center space-x-2">
         <button
           onClick={handleResultadoClick}
@@ -507,7 +519,7 @@ export default function GameRoom() {
       </div>
 
       {isConfigVisible &&
-        (<Configuracoes isEditable={isHost() && gameState.rodadas.length === 0} isConfigVisible={isConfigVisible} onChange={handleEditarParametros} jogador={myPlayer()} gameState={gameState} />)
+        (<Configuracoes isEditable={isHost() && gameState.rodadas.length === 0} isConfigVisible={isConfigVisible} onChange={handleEditarParametros} jogador={myPlayer()!} gameState={gameState} />)
       }
       <ResultadosJogadas visible={isResultadoVisible}
         resultadoJogada={myPlayer()?.getState(RESULTADO_JOGADA)}

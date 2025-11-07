@@ -337,8 +337,16 @@ export default function GameRoom() {
     //setPeixesCesto(totalPescadoRodada);
     //myPlayer()?.setState(PEIXES_CESTO, totalPescadoRodada, true);
 
+    const jogada = { quantidadePescada, jogadorAFiscalizar };
+
+    // Persist the move on the player's own state so the server records it
+    const jogadorAtual = myPlayer();
+    if (jogadorAtual) {
+      jogadorAtual.setState(JOGADA_PENDENTE, jogada, true);
+    }
+
     // Trigger the RPC on the host only
-    RPC.call('jogadaRealizada', { quantidadePescada: quantidadePescada, jogadorAFiscalizar: jogadorAFiscalizar }, RPC.Mode.HOST);
+    RPC.call('jogadaRealizada', jogada, RPC.Mode.HOST);
     setIsAguardando(true);
   }
 

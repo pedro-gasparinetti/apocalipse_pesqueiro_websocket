@@ -61,8 +61,23 @@ function createPlayerState(playerData: any): PlayerState {
       console.log('[PLAYER-STATE] Setting state:', key, '=', value, 'for player:', playerState.id);
       playerState.state[key] = value;
       
+      // Also update the player in the global players array
+      const globalPlayer = players.find(p => p.id === playerState.id);
+      if (globalPlayer) {
+        globalPlayer.state[key] = value;
+      }
+      
       if (socket && playerState.id === currentPlayer?.id) {
         socket.emit('update-player-state', { [key]: value });
+        
+        // Trigger callbacks for own state updates so usePlayersState hooks react
+        playersUpdateCallbacks.forEach(callback => {
+          try {
+            callback(players);
+          } catch (error) {
+            console.error('[PLAYER-STATE] Error in players update callback:', error);
+          }
+        });
       }
     },
     
@@ -163,6 +178,13 @@ export async function insertCoin(options: { matchmaking?: boolean; skipLobby?: b
       const player = players.find(p => p.id === data.playerId);
       if (player && data.state) {
         Object.assign(player.state, data.state);
+        playersUpdateCallbacks.forEach(callback => {
+          try {
+            callback(players);
+          } catch (error) {
+            console.error('[EVENT] Error in players update callback:', error);
+          }
+        });
       }
     });
 

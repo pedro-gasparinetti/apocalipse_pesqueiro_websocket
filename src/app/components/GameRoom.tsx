@@ -72,6 +72,12 @@ export default function GameRoom() {
     async function setGame() {
       await insertCoin({ matchmaking: true, skipLobby: true });
 
+      // Initialize local player state
+      const me = myPlayer();
+      if (me) {
+        me.setState(PEIXES_CESTO, 0);
+      }
+
       onPlayerJoin((playerState: PlayerState) => {
         // PlayerState is this player's multiplayer state along with it's profile.
         // Probably add a player sprite to the game here.
@@ -489,7 +495,7 @@ export default function GameRoom() {
         ) : null}
       </div>
 
-      <Cabecalho gameState={gameState} jogador={myPlayer()!} ></Cabecalho>
+      <Cabecalho gameState={gameState} jogador={jogadores.find(j => j.id === myPlayer()?.id) || myPlayer()!} ></Cabecalho>
       <div className="w-full mb-4 flex justify-center space-x-2">
         <button
           onClick={handleResultadoClick}
@@ -530,7 +536,7 @@ export default function GameRoom() {
         (<Configuracoes isEditable={isHost() && gameState.rodadas.length === 0} isConfigVisible={isConfigVisible} onChange={handleEditarParametros} jogador={myPlayer()!} gameState={gameState} />)
       }
       <ResultadosJogadas visible={isResultadoVisible}
-        resultadoJogada={myPlayer()?.getState(RESULTADO_JOGADA)}
+        resultadoJogada={jogadores.find(j => j.id === myPlayer()?.id)?.getState(RESULTADO_JOGADA)}
       ></ResultadosJogadas>
 
       {isGraficoVisible && (<div className="w-full mb-4" >

@@ -67,17 +67,23 @@ function createPlayerState(playerData: any): PlayerState {
         globalPlayer.state[key] = value;
       }
       
-      if (socket && playerState.id === currentPlayer?.id) {
-        socket.emit('update-player-state', { [key]: value });
-        
-        // Trigger callbacks for own state updates so usePlayersState hooks react
-        playersUpdateCallbacks.forEach(callback => {
-          try {
-            callback(players);
-          } catch (error) {
-            console.error('[PLAYER-STATE] Error in players update callback:', error);
-          }
-        });
+      if (socket) {
+        // If updating self
+        if (playerState.id === currentPlayer?.id) {
+           socket.emit('update-player-state', { [key]: value });
+           
+           // Trigger callbacks for own state updates
+           playersUpdateCallbacks.forEach(callback => {
+             try { callback(players); } catch (e) { console.error(e); }
+           });
+        }
+        // If host updating another player
+        else if (isHostPlayer) {
+           socket.emit('update-player-state', { 
+             playerId: playerState.id, 
+             state: { [key]: value } 
+           });
+        }
       }
     },
     

@@ -639,7 +639,150 @@ export default function GameRoom() {
           </div>
         </>)}
 
-      {/*  <Tabela rodadas={gameState.rodadas} /> */}
+      {/* Tabela de Resumo das Rodadas */}
+      <div className="w-full mb-4 overflow-x-auto">
+        <h2 className="text-lg font-semibold mb-2">Resumo das Rodadas</h2>
+        <table className="w-full border-collapse bg-white rounded-lg shadow-md">
+          <thead>
+            <tr className="bg-cyan-800 text-white">
+              <th className="border border-gray-300 px-2 py-2 text-sm">Rodada</th>
+              <th className="border border-gray-300 px-2 py-2 text-sm">Peixes no Lago</th>
+              <th className="border border-gray-300 px-2 py-2 text-sm">Pescados</th>
+              <th className="border border-gray-300 px-2 py-2 text-sm">Acumulados</th>
+              <th className="border border-gray-300 px-2 py-2 text-sm">Fiscalizou?</th>
+              <th className="border border-gray-300 px-2 py-2 text-sm">Foi Fiscalizado?</th>
+              <th className="border border-gray-300 px-2 py-2 text-sm">Banca Acum.</th>
+              <th className="border border-gray-300 px-2 py-2 text-sm">Crescimento Acum.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 10 }, (_, index) => {
+              const rodadaNumero = index + 1;
+              const rodada = gameState.rodadas.find(r => r.numero === rodadaNumero);
+              const jogadorAtual = myPlayer();
+              const jogada = rodada?.jogadas.find(j => j.idJogador === jogadorAtual?.id);
+              
+              // Calcula banca acumulada até esta rodada
+              const bancaAcumulada = gameState.rodadas
+                .filter(r => r.numero <= rodadaNumero)
+                .reduce((acc, r) => acc + (r.saldoBanca || 0), 0);
+              
+              // Calcula crescimento acumulado até esta rodada
+              const crescimentoAcumulado = gameState.rodadas
+                .filter(r => r.numero <= rodadaNumero)
+                .reduce((acc, r) => acc + (r.crescimentoLago || 0), 0);
+              
+              // Calcula peixes acumulados até esta rodada
+              let peixesAcumulados = 0;
+              if (rodada && jogadorAtual) {
+                const rodadasAteAqui = gameState.rodadas.filter(r => r.numero <= rodadaNumero);
+                rodadasAteAqui.forEach(r => {
+                  const j = r.jogadas.find(jg => jg.idJogador === jogadorAtual.id);
+                  if (j) {
+                    // Se foi fiscalizado e roubou, não ganha nada
+                    if (j.roubou && j.fiscalizadoPor && j.fiscalizadoPor.length > 0) {
+                      // Não adiciona nada
+                    } else {
+                      // Adiciona o que pescou menos custo de fiscalização
+                      const limitePeixesPossiveis = r.quantidadeLagoInicial || 0;
+                      const distribuicao = distribuirPeixesProporcional(
+                        r.jogadas.map(jg => ({ idJogador: jg.idJogador, quantidadePescada: jg.quantidadePescada })),
+                        limitePeixesPossiveis
+                      );
+                      let pescou = distribuicao[jogadorAtual.id] || 0;
+                      pescou -= j.jogadorAFiscalizar ? gameState.custoFiscalizacao : 0;
+                      peixesAcumulados += pescou;
+                      
+                      // Adiciona rateio se fiscalizou alguém que roubou
+                      if (j.jogadorAFiscalizar) {
+                        const fiscalizado = r.jogadas.find(jf => jf.idJogador === j.jogadorAFiscalizar);
+                        if (fiscalizado?.roubou && fiscalizado?.rateioPerdido) {
+                          peixesAcumulados += fiscalizado.rateioPerdido;
+                        }
+                      }
+                    }
+                  }
+                });
+              }
+
+              return (
+                <tr key={index} className={rodada ? "bg-white hover:bg-gray-50" : "bg-gray-100"}>
+                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">{rodadaNumero}</td>
+                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                    {rodada ? rodada.quantidadeLagoInicial.toFixed(1) : '-'}
+                  </td>
+                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                    {jogada ? (
+                      jogada.roubou && jogada.fiscalizadoPor && jogada.fiscalizadoPor.length > 0 
+                        ? '0.0 (Fiscalizado)'
+                        : (() => {
+                            const limitePeixesPossiveis = rodada.quantidadeLagoInicial || 0;
+                            const distribuicao = distribuirPeixesProporcional(
+                              rodada.jogadas.map(j => ({ idJogador: j.idJogador, quantidadePescada: j.quantidadePescada })),
+                              limitePeixesPossiveis
+                            );
+                            let pescou = distribuicao[jogadorAtual?.id || ''] || 0;
+                            pescou -= jogada.jogadorAFiscalizar ? gameState.custoFiscalizacao : 0;
+                            
+                            // Adiciona rateio ganho
+                            if (jogada.jogadorAFiscalizar) {
+                              const fiscalizado = rodada.jogadas.find(j => j.idJogador === jogada.jogadorAFiscalizar);
+                              if (fiscalizado?.roubou && fiscalizado?.rateioPerdido) {
+                                pescou += fiscalizado.rateioPerdido;
+                              }
+                            }
+                            return pescou.toFixed(1);
+                          })()
+                    ) : '-'}
+                  </td>
+                  <td className="border border-gray-300 px-2 py-2 text-center text-sm font-semibold">
+                    {rodada ? peixesAcumulados.toFixed(1) : '-'}
+                  </td>
+                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                    {jogada ? (jogada.jogadorAFiscalizar ? '✓' : '✗') : '-'}
+                  </td>
+                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                    {jogada && jogada.fiscalizadoPor && jogada.fiscalizadoPor.length > 0 ? '✓' : (jogada ? '✗' : '-')}
+                  </td>
+                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                    {rodada ? bancaAcumulada.toFixed(1) : '-'}
+                  </td>
+                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                    {rodada ? crescimentoAcumulado.toFixed(1) : '-'}
+                  </td>
+                </tr>
+              );
+            })}
+            {/* Linha de Total */}
+            <tr className="bg-cyan-700 text-white font-bold">
+              <td className="border border-gray-300 px-2 py-2 text-center text-sm">TOTAL</td>
+              <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
+              <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
+              <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                {myPlayer()?.getState(PEIXES_CESTO)?.toFixed(1) || '0.0'}
+              </td>
+              <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                {gameState.rodadas.filter(r => {
+                  const j = r.jogadas.find(jg => jg.idJogador === myPlayer()?.id);
+                  return j && j.jogadorAFiscalizar;
+                }).length}
+              </td>
+              <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                {gameState.rodadas.filter(r => {
+                  const j = r.jogadas.find(jg => jg.idJogador === myPlayer()?.id);
+                  return j && j.fiscalizadoPor && j.fiscalizadoPor.length > 0;
+                }).length}
+              </td>
+              <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                {gameState.quantidadeBanca.toFixed(1)}
+              </td>
+              <td className="border border-gray-300 px-2 py-2 text-center text-sm">
+                {gameState.rodadas.reduce((acc, r) => acc + (r.crescimentoLago || 0), 0).toFixed(1)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       {
         gameState.jogoFinalizado ? (

@@ -34,11 +34,11 @@ export default function Leaderboard({ players, currentPlayerId }: LeaderboardPro
   const getRankIcon = (index: number) => {
     switch (index) {
       case 0:
-        return <Icon as={FaTrophy} color="yellow.500" boxSize={6} />
+        return <Icon as={FaTrophy} color="yellow.500" boxSize={4} />
       case 1:
-        return <Icon as={FaMedal} color="gray.400" boxSize={5} />
+        return <Icon as={FaMedal} color="gray.400" boxSize={3.5} />
       case 2:
-        return <Icon as={FaAward} color="orange.600" boxSize={5} />
+        return <Icon as={FaAward} color="orange.600" boxSize={3.5} />
       default:
         return null
     }
@@ -58,8 +58,8 @@ export default function Leaderboard({ players, currentPlayerId }: LeaderboardPro
           Leaderboard
         </Heading>
       </Box>
-      <CardBody p={4}>
-        <VStack spacing={3} align="stretch">
+      <CardBody p={2}>
+        <VStack spacing={2} align="stretch">
           {sortedPlayers.map((player, index) => (
             <Box
               key={player.id}
@@ -71,17 +71,17 @@ export default function Leaderboard({ players, currentPlayerId }: LeaderboardPro
               transition="all 0.2s"
               _hover={{ borderColor: 'accent.400', boxShadow: 'float', transform: 'translateY(-2px)' }}
             >
-              <HStack p={4} spacing={4}>
-                <Flex w="40px" justify="center" align="center">
+              <HStack p={2} spacing={3}>
+                <Flex w="26px" justify="center" align="center">
                   {getRankIcon(index) || (
-                    <Text fontWeight="bold" fontSize="lg" color="paper.200">
+                    <Text fontWeight="bold" fontSize="md" color="paper.200">
                       {index + 1}
                     </Text>
                   )}
                 </Flex>
 
                 <Avatar
-                  size="md"
+                  size="sm"
                   name={player.name}
                   src={player.photo}
                   border="2px"

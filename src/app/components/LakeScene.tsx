@@ -27,7 +27,7 @@ interface LakeSceneProps {
 }
 
 type Fish = { sprite: Graphics; vx: number; vy: number; history: { x: number; y: number }[] }
-type Boat = { graphic: Graphics; vx: number; vy: number; phase: number }
+type Boat = { graphic: Graphics; vx: number; vy: number; phase: number; rotation: number }
 
 export default function LakeScene({
   fishCount,
@@ -125,10 +125,19 @@ export default function LakeScene({
       const boats: Boat[] = []
       const fishes: Fish[] = []
 
+      const lerpAngle = (a: number, b: number, t: number) => {
+        const twoPi = Math.PI * 2
+        let diff = ((b - a + Math.PI) % twoPi) - Math.PI
+        // choose the shortest path
+        if (diff > Math.PI) diff -= twoPi
+        if (diff < -Math.PI) diff += twoPi
+        return a + diff * t
+      }
+
       const createBoat = (index: number) => {
         const g = new Graphics()
         const size = boatSize
-        g.rect(-size / 2, -size / 2, size, size)
+        g.rect(-size, -size / 2, size * 2, size)
         g.fill({ color: boatPalette[index % boatPalette.length], alpha: 0.95 })
         g.stroke({ color: 0xffffff, alpha: 0.12, width: 1 })
         const { width, height } = app.renderer
@@ -138,11 +147,14 @@ export default function LakeScene({
         boatsLayer.addChild(g)
         const speed = (Math.random() * 0.4 + 0.25) * speedFactor
         const angle = Math.random() * Math.PI * 2
+        const vx = Math.cos(angle) * speed
+        const vy = Math.sin(angle) * speed
         boats.push({
           graphic: g,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
+          vx,
+          vy,
           phase: Math.random() * Math.PI,
+          rotation: angle,
         })
       }
 
@@ -220,7 +232,6 @@ export default function LakeScene({
           boat.phase += 0.012 * delta.deltaTime
           boat.graphic.x += boat.vx * delta.deltaTime
           boat.graphic.y += boat.vy * delta.deltaTime + Math.sin(boat.phase) * 0.15
-          boat.graphic.rotation = Math.sin(frame * 0.004 + idx) * 0.02
 
           const maxBoatSpeed = 0.9 * speedFactor
           boat.vx = Math.max(Math.min(boat.vx, maxBoatSpeed), -maxBoatSpeed)
@@ -243,6 +254,10 @@ export default function LakeScene({
             boat.graphic.y = margin
             boat.vy *= -1
           }
+
+          const desiredRotation = Math.atan2(boat.vy, boat.vx)
+          boat.rotation = lerpAngle(boat.rotation, desiredRotation, 0.06 * delta.deltaTime)
+          boat.graphic.rotation = boat.rotation
         })
 
         // Fish population control

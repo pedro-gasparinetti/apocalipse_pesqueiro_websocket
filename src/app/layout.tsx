@@ -6,7 +6,7 @@ import { Providers } from './providers'
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'Common Pool Resource Game - Fishing Simulation',
+  title: 'Apocalipse Pesqueiro - Fishing Simulation',
   description: 'A multiplayer game exploring the tragedy of the commons through sustainable fishing',
 }
 

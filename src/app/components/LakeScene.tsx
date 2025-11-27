@@ -18,6 +18,11 @@ interface LakeSceneProps {
   boatColors?: number[]
   speedFactor?: number
   boatSize?: number
+  boatWakeColor?: number
+  boatWakeMaxAlpha?: number
+  boatWakeLengthFactor?: number
+  boatWakeThicknessFactor?: number
+  boatWakeHistory?: number
   surface?: {
     enabled?: boolean
     opacity?: number
@@ -27,7 +32,7 @@ interface LakeSceneProps {
 }
 
 type Fish = { sprite: Graphics; vx: number; vy: number; history: { x: number; y: number }[] }
-type Boat = { graphic: Graphics; vx: number; vy: number; phase: number; rotation: number }
+type Boat = { graphic: Graphics; vx: number; vy: number; phase: number; rotation: number; wake: { x: number; y: number; rotation: number }[] }
 
 export default function LakeScene({
   fishCount,
@@ -43,6 +48,11 @@ export default function LakeScene({
   fishTrailSize = 3,
   fishTrailLength = 16,
   boatSize = 30,
+  boatWakeColor = 0xffffff,
+  boatWakeMaxAlpha = 0.05,
+  boatWakeLengthFactor = 1.8,
+  boatWakeThicknessFactor = 0.05,
+  boatWakeHistory = 80,
   surface = { enabled: true, opacity: 0.06, tint: 0xffffff },
   fullScreen = false,
 }: LakeSceneProps) {
@@ -93,6 +103,8 @@ export default function LakeScene({
       const trailLayer = new Graphics()
       const fishLayer = new Container()
       const surfaceLayer = new Graphics()
+      const wakeLayer = new Graphics()
+      wakeLayer.zIndex = 3.5
       const boatsLayer = new Container()
 
       app.stage.sortableChildren = true
@@ -107,6 +119,7 @@ export default function LakeScene({
       app.stage.addChild(trailLayer)
       app.stage.addChild(fishLayer)
       app.stage.addChild(surfaceLayer)
+      app.stage.addChild(wakeLayer)
       app.stage.addChild(boatsLayer)
 
       const accent = 0x5b8def
@@ -155,6 +168,7 @@ export default function LakeScene({
           vy,
           phase: Math.random() * Math.PI,
           rotation: angle,
+          wake: [],
         })
       }
 
@@ -258,6 +272,53 @@ export default function LakeScene({
           const desiredRotation = Math.atan2(boat.vy, boat.vx)
           boat.rotation = lerpAngle(boat.rotation, desiredRotation, 0.06 * delta.deltaTime)
           boat.graphic.rotation = boat.rotation
+          boat.wake.unshift({ x: boat.graphic.x, y: boat.graphic.y, rotation: boat.rotation })
+          boat.wake = boat.wake.slice(0, boatWakeHistory)
+        })
+
+        // wakes around boats with fading traces
+        wakeLayer.clear()
+        boats.forEach((boat) => {
+          const wakeLength = boatSize * boatWakeLengthFactor
+          const wakeThickness = Math.max(2, boatSize * boatWakeThicknessFactor)
+          boat.wake.forEach((trail, idx) => {
+            const alpha = boatWakeMaxAlpha * (1 - idx / boat.wake.length)
+            const halfHeight = boatSize / 2
+            const normalX = -Math.sin(trail.rotation)
+            const normalY = Math.cos(trail.rotation)
+            const forwardX = Math.cos(trail.rotation)
+            const forwardY = Math.sin(trail.rotation)
+            const cxLeft = trail.x + normalX * (halfHeight + 3)
+            const cyLeft = trail.y + normalY * (halfHeight + 3)
+            const cxRight = trail.x - normalX * (halfHeight + 3)
+            const cyRight = trail.y - normalY * (halfHeight + 3)
+
+            const drawWake = (cx: number, cy: number) => {
+              const halfLen = wakeLength / 2
+              const halfThick = wakeThickness / 2
+              const sx = cx - forwardX * halfLen
+              const sy = cy - forwardY * halfLen
+              const ex = cx + forwardX * halfLen
+              const ey = cy + forwardY * halfLen
+              const p1x = sx + normalX * halfThick
+              const p1y = sy + normalY * halfThick
+              const p2x = sx - normalX * halfThick
+              const p2y = sy - normalY * halfThick
+              const p3x = ex - normalX * halfThick
+              const p3y = ey - normalY * halfThick
+              const p4x = ex + normalX * halfThick
+              const p4y = ey + normalY * halfThick
+              wakeLayer.moveTo(p1x, p1y)
+              wakeLayer.lineTo(p2x, p2y)
+              wakeLayer.lineTo(p3x, p3y)
+              wakeLayer.lineTo(p4x, p4y)
+              wakeLayer.lineTo(p1x, p1y)
+              wakeLayer.fill({ color: boatWakeColor, alpha })
+            }
+
+            drawWake(cxLeft, cyLeft)
+            drawWake(cxRight, cyRight)
+          })
         })
 
         // Fish population control

@@ -9,11 +9,6 @@ import {
   VStack,
   HStack,
   Text,
-  Slider,
-  SliderTrack,
-  SliderFilledTrack,
-  SliderThumb,
-  SliderMark,
   useDisclosure,
   IconButton,
   Flex,
@@ -689,7 +684,7 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
       >
         <Container maxW="container.xl">
           <Flex justify="space-between" align="center" flexWrap="wrap" gap={4}>
-            <Heading size="lg">Common Pool Resource Game</Heading>
+            <Heading size="lg">Apocalipse Pesqueiro</Heading>
             <HStack spacing={2}>
               <IconButton
                 aria-label="Instructions"
@@ -834,7 +829,7 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
                     <CardBody>
                       <VStack spacing={6}>
                         <Box w="100%">
-                          <HStack justify="space-between" mb={4}>
+                          <HStack justify="space-between" mb={3}>
                             <Text fontWeight="600" color="gray.100">
                               How many fish will you catch?
                             </Text>
@@ -846,7 +841,7 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
                                 py={1}
                                 borderRadius="full"
                               >
-                                {quantidadePescada}
+                                {quantidadePescada || 0}
                               </Badge>
                               {quantidadePescada > gameState.limiteSustentavel && (
                                 <Badge colorScheme="orange">Overfishing!</Badge>
@@ -854,27 +849,46 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
                             </HStack>
                           </HStack>
 
-                          <Slider
-                            value={quantidadePescada}
-                            onChange={setQuantidadePescada}
-                            min={0}
-                            max={gameState.limitePossivelRodada}
-                            step={1}
-                            isDisabled={isAguardando}
-                          >
-                            <SliderMark value={gameState.limiteSustentavel} mt={-10} fontSize="sm">
-                              <Badge colorScheme="green">Sustainable</Badge>
-                            </SliderMark>
-                            <SliderTrack bg="gray.200">
-                              <SliderFilledTrack
-                                bg={quantidadePescada > gameState.limiteSustentavel ? 'danger.500' : 'success.500'}
-                              />
-                            </SliderTrack>
-                            <SliderThumb boxSize={6} />
-                          </Slider>
+                          <Text fontSize="sm" color="gray.400" mb={2}>
+                            Sustainable up to {gameState.limiteSustentavel}
+                          </Text>
+
+                          <SimpleGrid minChildWidth="56px" spacing={3}>
+                            {Array.from({ length: gameState.limitePossivelRodada }, (_, idx) => idx + 1).map((val) => {
+                              const isSelected = quantidadePescada === val
+                              const isOver = val > gameState.limiteSustentavel
+                              return (
+                                <Button
+                                  key={val}
+                                  onClick={() => setQuantidadePescada(val)}
+                                  variant={isSelected ? 'solid' : 'ghost'}
+                                  colorScheme={isOver ? 'danger' : 'brand'}
+                                  bg={
+                                    isSelected
+                                      ? isOver
+                                        ? 'rgba(225,93,93,0.18)'
+                                        : 'rgba(91,141,239,0.2)'
+                                      : 'rgba(255,255,255,0.04)'
+                                  }
+                                  _hover={{
+                                    bg: isOver ? 'rgba(225,93,93,0.22)' : 'rgba(91,141,239,0.24)',
+                                    transform: 'translateY(-2px)',
+                                  }}
+                                  _active={{ transform: 'translateY(0)' }}
+                                  border="1px solid"
+                                  borderColor={isSelected ? 'accent.400' : 'rgba(255,255,255,0.1)'}
+                                  borderRadius="lg"
+                                  boxShadow={isSelected ? 'soft' : 'none'}
+                                  isDisabled={isAguardando}
+                                >
+                                  {val}
+                                </Button>
+                              )
+                            })}
+                          </SimpleGrid>
 
                           <HStack justify="space-between" mt={2} fontSize="sm" color="gray.500">
-                            <Text>0</Text>
+                            <Text>Min: 1</Text>
                             <Text>Max: {gameState.limitePossivelRodada}</Text>
                           </HStack>
                         </Box>
@@ -892,19 +906,6 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
                           </Text>
                         </Box>
 
-                        <Button
-                          onClick={handlePescar}
-                          isDisabled={isAguardando}
-                          isLoading={isAguardando}
-                          loadingText="Waiting for others..."
-                          colorScheme="brand"
-                          size="lg"
-                          w="100%"
-                          height="60px"
-                          fontSize="xl"
-                        >
-                          {isAguardando ? 'Waiting for other players...' : 'Submit Your Play'}
-                        </Button>
                       </VStack>
                     </CardBody>
                   </Card>
@@ -919,6 +920,23 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
                   />
                 </GridItem>
               </Grid>
+              <Box pt={2} pb={6}>
+                <Button
+                  onClick={handlePescar}
+                  isDisabled={isAguardando}
+                  isLoading={isAguardando}
+                  loadingText="Waiting for others..."
+                  colorScheme="brand"
+                  size="lg"
+                  w="100%"
+                  height="60px"
+                  fontSize="xl"
+                  borderRadius="full"
+                  boxShadow="float"
+                >
+                  {isAguardando ? 'Waiting for other players...' : 'Submit Your Play'}
+                </Button>
+              </Box>
 
               <Grid templateColumns={{ base: '1fr', lg: '1fr 2fr' }} gap={8}>
                 <GridItem>

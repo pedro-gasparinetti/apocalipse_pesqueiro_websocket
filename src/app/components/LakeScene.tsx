@@ -50,7 +50,7 @@ export default function LakeScene({
   boatSize = 30,
   boatWakeColor = 0xffffff,
   boatWakeMaxAlpha = 0.01,
-  boatWakeLengthFactor = 1.9,
+  boatWakeLengthFactor = 1.8,
   boatWakeThicknessFactor = 0.05,
   boatWakeHistory = 300,
   surface = { enabled: true, opacity: 0.06, tint: 0xffffff },
@@ -150,7 +150,19 @@ export default function LakeScene({
       const createBoat = (index: number) => {
         const g = new Graphics()
         const size = boatSize
-        g.rect(-size, -size / 2, size * 2, size)
+        const halfH = size / 2
+        const length = size * 2
+        const frontRadius = Math.min(size * 0.35, halfH)
+        const frontX = size
+        const backX = -size
+
+        g.moveTo(backX, -halfH)
+        g.lineTo(frontX - frontRadius, -halfH)
+        g.arcTo(frontX, -halfH, frontX, -halfH + frontRadius, frontRadius)
+        g.lineTo(frontX, halfH - frontRadius)
+        g.arcTo(frontX, halfH, frontX - frontRadius, halfH, frontRadius)
+        g.lineTo(backX, halfH)
+        g.lineTo(backX, -halfH)
         g.fill({ color: boatPalette[index % boatPalette.length], alpha: 0.95 })
         g.stroke({ color: 0xffffff, alpha: 0.12, width: 1 })
         const { width, height } = app.renderer

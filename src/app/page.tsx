@@ -1,11 +1,11 @@
 'use client'
 
 import dynamic from 'next/dynamic'
- 
-const GameRoom = dynamic(() => import('./components/GameRoom'), {
+
+const NewGameRoom = dynamic(() => import('./components/NewGameRoom'), {
   ssr: false, //server side rendering
 })
 
 export default function Home() {
-  return <GameRoom />
+  return <NewGameRoom />
 }

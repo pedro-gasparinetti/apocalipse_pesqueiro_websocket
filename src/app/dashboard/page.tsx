@@ -40,8 +40,8 @@ export default function DashboardPage() {
       <Container maxW="6xl" px={{ base: 4, md: 6 }} pt={{ base: 8, md: 12 }}>
         <HStack justify="space-between" align="flex-start" mb={6} spacing={4} flexWrap="wrap">
           <VStack align="flex-start" spacing={1}>
-            <Heading size="lg">Dashboard</Heading>
-            <Text color="ink.500" _dark={{ color: 'ink.300' }}>
+            <Heading color="ink.100" size="lg">Dashboard</Heading>
+            <Text color="ink.100" _dark={{ color: 'ink.300' }}>
               Run the simulation, monitor the lake, and review insights.
             </Text>
           </VStack>
@@ -55,15 +55,17 @@ export default function DashboardPage() {
           </HStack>
         </HStack>
 
-        <Tabs defaultIndex={0}>
-          <TabList>
-            <Tab>Simulation</Tab>
-            <Tab>Insights</Tab>
-          </TabList>
+        <Tabs defaultIndex={0} variant="unstyled">
+          <Box mb={8}>
+            <TabList borderBottom="none" pb={2}>
+              <Tab>Simulation</Tab>
+              <Tab>Insights</Tab>
+            </TabList>
+          </Box>
           <TabPanels>
             <TabPanel px={0} pt={6}>
               <MotionBox initial={{ opacity: 0.92, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                <GameRoom />
+                <GameRoom fullScreenLake />
               </MotionBox>
             </TabPanel>
             <TabPanel px={0} pt={6}>

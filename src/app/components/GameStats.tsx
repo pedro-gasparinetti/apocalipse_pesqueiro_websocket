@@ -36,22 +36,23 @@ export default function GameStats({
       <Card
         borderRadius="xl"
         boxShadow="md"
-        bg="brand.50"
+        //opacity={0.3}
+        bg="transparent "
         border="2px"
-        borderColor="brand.200"
+        borderColor="brand.30"
       >
         <CardBody>
           <Stat>
             <HStack mb={2}>
               <Icon as={FaFish} boxSize={5} color="brand.600" />
-              <StatLabel fontSize="sm" fontWeight="600" color="gray.700">
+              <StatLabel fontSize="sm" fontWeight="600" color="gray.100">
                 My Fish
               </StatLabel>
             </HStack>
             <StatNumber fontSize="3xl" fontWeight="bold" color="brand.600">
               {myFishCount.toFixed(1)}
             </StatNumber>
-            <StatHelpText color="gray.600" mb={0}>
+            <StatHelpText color="gray.100" mb={0}>
               Your total catch
             </StatHelpText>
           </Stat>
@@ -61,22 +62,23 @@ export default function GameStats({
       <Card
         borderRadius="xl"
         boxShadow="md"
-        bg="lake.50"
+        //opacity={0.3}
+        bg="transparent "
         border="2px"
-        borderColor="lake.200"
+        borderColor="brand.30"
       >
         <CardBody>
           <Stat>
             <HStack mb={2}>
               <Icon as={FaWater} boxSize={5} color="lake.600" />
-              <StatLabel fontSize="sm" fontWeight="600" color="gray.700">
+              <StatLabel fontSize="sm" fontWeight="600" color="gray.100">
                 Lake Stock
               </StatLabel>
             </HStack>
             <StatNumber fontSize="3xl" fontWeight="bold" color="lake.600">
               {lakeFishCount.toFixed(1)}
             </StatNumber>
-            <StatHelpText color="gray.600" mb={0}>
+            <StatHelpText color="gray.100" mb={0}>
               Available fish
             </StatHelpText>
           </Stat>
@@ -86,22 +88,23 @@ export default function GameStats({
       <Card
         borderRadius="xl"
         boxShadow="md"
-        bg="earth.50"
+        //opacity={0.3}
+        bg="transparent "
         border="2px"
-        borderColor="earth.200"
+        borderColor="brand.30"
       >
         <CardBody>
           <Stat>
             <HStack mb={2}>
-              <Icon as={FaCoins} boxSize={5} color="earth.600" />
-              <StatLabel fontSize="sm" fontWeight="600" color="gray.700">
+              <Icon as={FaCoins} boxSize={5} color="orange.200" />
+              <StatLabel fontSize="sm" fontWeight="600" color="gray.100">
                 Bank Total
               </StatLabel>
             </HStack>
-            <StatNumber fontSize="3xl" fontWeight="bold" color="earth.600">
+            <StatNumber fontSize="3xl" fontWeight="bold" color="orange.200">
               {bankTotal.toFixed(1)}
             </StatNumber>
-            <StatHelpText color="gray.600" mb={0}>
+            <StatHelpText color="gray.100" mb={0}>
               Lost to fees
             </StatHelpText>
           </Stat>
@@ -111,22 +114,23 @@ export default function GameStats({
       <Card
         borderRadius="xl"
         boxShadow="md"
-        bg="success.50"
+        //opacity={0.3}
+        bg="transparent "
         border="2px"
-        borderColor="success.200"
+        borderColor="brand.30"
       >
         <CardBody>
           <Stat>
             <HStack mb={2}>
               <Icon as={FaChartLine} boxSize={5} color="success.600" />
-              <StatLabel fontSize="sm" fontWeight="600" color="gray.700">
+              <StatLabel fontSize="sm" fontWeight="600" color="gray.100">
                 Round
               </StatLabel>
             </HStack>
             <StatNumber fontSize="3xl" fontWeight="bold" color="success.600">
               {currentRound} / {totalRounds}
             </StatNumber>
-            <StatHelpText color="gray.600" mb={0}>
+            <StatHelpText color="gray.100" mb={0}>
               Growth: {(growthRate * 100).toFixed(0)}%
             </StatHelpText>
           </Stat>

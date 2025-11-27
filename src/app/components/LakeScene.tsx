@@ -10,6 +10,20 @@ interface LakeSceneProps {
   currentRound: number
   isGameActive: boolean
   height?: string | number
+  backgroundColor?: number
+  fishOpacity?: number
+  fishSize?: number
+  fishTrailSize?: number
+  fishTrailLength?: number
+  boatColors?: number[]
+  speedFactor?: number
+  boatSize?: number
+  surface?: {
+    enabled?: boolean
+    opacity?: number
+    tint?: number
+  }
+  fullScreen?: boolean
 }
 
 type Fish = { sprite: Graphics; vx: number; vy: number; history: { x: number; y: number }[] }
@@ -21,6 +35,16 @@ export default function LakeScene({
   currentRound,
   isGameActive,
   height = 'calc(100vh - 200px)',
+  backgroundColor,
+  fishOpacity = 0.15,
+  boatColors,
+  speedFactor = 0.6,
+  fishSize = 6,
+  fishTrailSize = 3,
+  fishTrailLength = 16,
+  boatSize = 30,
+  surface = { enabled: true, opacity: 0.06, tint: 0xffffff },
+  fullScreen = false,
 }: LakeSceneProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const appRef = useRef<Application | null>(null)
@@ -42,13 +66,24 @@ export default function LakeScene({
     const app = new Application()
 
     const init = async () => {
-      await app.init({
-        resizeTo: container,
-        backgroundAlpha: 0,
-        antialias: true,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-      })
+      if (fullScreen) {
+        await app.init({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundAlpha: 0,
+          antialias: true,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        })
+      } else {
+        await app.init({
+          resizeTo: container,
+          backgroundAlpha: 0,
+          antialias: true,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        })
+      }
 
       if (!mounted) return
       appRef.current = app
@@ -57,15 +92,19 @@ export default function LakeScene({
       const lakeLayer = new Graphics()
       const trailLayer = new Graphics()
       const fishLayer = new Container()
+      const surfaceLayer = new Graphics()
       const boatsLayer = new Container()
 
+      // layering: lake (bg) -> fish + trails -> surface effects -> boats (top)
       app.stage.addChild(lakeLayer)
       app.stage.addChild(trailLayer)
       app.stage.addChild(fishLayer)
+      app.stage.addChild(surfaceLayer) // between fish and boats
       app.stage.addChild(boatsLayer)
 
       const accent = 0x5b8def
-      const water = 0x0f1624
+      const water = backgroundColor ?? 0x0d1723
+      const boatPalette = boatColors ?? [0x6b5845, 0x4a4f55, 0x8c7a65, 0x5c5750]
 
       const drawLake = () => {
         const { width, height } = app.renderer
@@ -81,22 +120,21 @@ export default function LakeScene({
 
       const createBoat = (index: number) => {
         const g = new Graphics()
-        const size = 30
-        g.roundRect(-size / 2, -size / 2, size, size, 6)
-        g.fill({ color: accent, alpha: 0.9 })
-        g.stroke({ color: 0xffffff, alpha: 0.4, width: 1 })
-        g.rect(-size / 4, -size / 4, size / 2, size / 2)
-        g.fill({ color: 0x0f172a, alpha: 0.6 })
+        const size = boatSize
+        g.rect(-size / 2, -size / 2, size, size)
+        g.fill({ color: boatPalette[index % boatPalette.length], alpha: 0.95 })
+        g.stroke({ color: 0xffffff, alpha: 0.12, width: 1 })
         g.x = (index + 1) * 140
         g.y = app.renderer.height * 0.22 + Math.sin(index) * 12
         boatsLayer.addChild(g)
-        boats.push({ graphic: g, vx: Math.random() * 0.6 + 0.4, phase: Math.random() * Math.PI })
+        boats.push({ graphic: g, vx: (Math.random() * 0.4 + 0.25) * speedFactor, phase: Math.random() * Math.PI })
       }
 
       const createFish = () => {
         const s = new Graphics()
-        s.rect(-3, -3, 6, 6)
-        s.fill({ color: 0xffffff, alpha: 0.9 })
+        const half = fishSize / 2
+        s.rect(-half, -half, fishSize, fishSize)
+        s.fill({ color: 0xffffff, alpha: fishOpacity })
         s.stroke({ color: accent, alpha: 0.65, width: 1 })
         const { width, height } = app.renderer
         s.x = Math.random() * width
@@ -104,15 +142,27 @@ export default function LakeScene({
         fishLayer.addChild(s)
         return {
           sprite: s,
-          vx: (Math.random() - 0.5) * 1.2,
-          vy: (Math.random() - 0.5) * 1.2,
+          vx: (Math.random() - 0.5) * 1.2 * speedFactor,
+          vy: (Math.random() - 0.5) * 1.2 * speedFactor,
           history: [] as { x: number; y: number }[],
         }
       }
 
-      const handleResize = () => drawLake()
-      const resizeObserver = new ResizeObserver(handleResize)
-      resizeObserver.observe(container)
+      let resizeObserver: ResizeObserver | null = null
+      const handleResize = () => {
+        if (fullScreen) {
+          app.renderer.resize(window.innerWidth, window.innerHeight)
+          drawLake()
+        } else {
+          drawLake()
+        }
+      }
+      if (fullScreen) {
+        window.addEventListener('resize', handleResize)
+      } else {
+        resizeObserver = new ResizeObserver(handleResize)
+        resizeObserver.observe(container)
+      }
 
       let frame = 0
       app.ticker.add((delta) => {
@@ -144,10 +194,11 @@ export default function LakeScene({
         // Trails + smooth fish motion
         trailLayer.clear()
         fishes.forEach((fish, idx) => {
-          fish.vx += Math.sin(frame * 0.01 + idx) * 0.006
-          fish.vy += Math.cos(frame * 0.012 + idx) * 0.006
-          fish.vx = Math.max(Math.min(fish.vx, 1.8), -1.8)
-          fish.vy = Math.max(Math.min(fish.vy, 1.6), -1.6)
+          const jitter = 0.004 * speedFactor
+          fish.vx += Math.sin(frame * 0.008 + idx) * 0.004 + (Math.random() - 0.5) * jitter
+          fish.vy += Math.cos(frame * 0.01 + idx) * 0.004 + (Math.random() - 0.5) * jitter
+          fish.vx = Math.max(Math.min(fish.vx, 1.2 * speedFactor), -1.2 * speedFactor)
+          fish.vy = Math.max(Math.min(fish.vy, 1.0 * speedFactor), -1.0 * speedFactor)
 
           fish.sprite.x += fish.vx * delta.deltaTime
           fish.sprite.y += fish.vy * delta.deltaTime
@@ -167,19 +218,34 @@ export default function LakeScene({
           }
 
           fish.history.unshift({ x: fish.sprite.x, y: fish.sprite.y })
-          fish.history = fish.history.slice(0, 14)
+          fish.history = fish.history.slice(0, fishTrailLength)
           fish.history.forEach((point, i) => {
             const alpha = 0.22 * (1 - i / fish.history.length)
-            trailLayer.rect(point.x - 1.5, point.y - 1.5, 3, 3)
+            const halfTrail = fishTrailSize / 2
+            trailLayer.rect(point.x - halfTrail, point.y - halfTrail, fishTrailSize, fishTrailSize)
             trailLayer.fill({ color: accent, alpha })
           })
         })
+
+        // Surface layer effects (between fish and boats)
+        if (surface?.enabled) {
+          surfaceLayer.clear()
+          surfaceLayer.alpha = surface.opacity ?? 0.06
+          const bandCount = 6
+          const tint = surface.tint ?? 0xffffff
+          for (let i = 0; i < bandCount; i++) {
+            const y = (height / bandCount) * i + Math.sin(frame * 0.01 + i) * 4
+            surfaceLayer.rect(0, y, width, 2)
+            surfaceLayer.fill({ color: tint, alpha: (surface.opacity ?? 0.06) * 0.6 })
+          }
+        }
       })
 
       setReady(true)
 
       return () => {
-        resizeObserver.disconnect()
+        if (resizeObserver) resizeObserver.disconnect()
+        if (fullScreen) window.removeEventListener('resize', handleResize)
       }
     }
 
@@ -198,14 +264,23 @@ export default function LakeScene({
     <Box
       ref={canvasRef}
       position="relative"
-      w="100%"
-      h={height}
-      borderRadius="2xl"
-      border={`1px solid ${borderColor}`}
+      w={fullScreen ? '100vw' : '100%'}
+      h={fullScreen ? '100vh' : height}
+      borderRadius="0"
+      border={backgroundColor ? 'none' : `1px solid ${borderColor}`}
       overflow="hidden"
-      boxShadow="float"
-      bgGradient="linear(to-br, rgba(12,18,31,0.92), rgba(18,24,36,0.86))"
-      _dark={{ bgGradient: 'linear(to-br, rgba(8,10,16,0.9), rgba(6,9,14,0.9))' }}
+      boxShadow={backgroundColor ? 'none' : 'float'}
+      bg={backgroundColor ? `#${backgroundColor.toString(16).padStart(6, '0')}` : undefined}
+      bgGradient={
+        backgroundColor
+          ? undefined
+          : 'linear(to-br, rgba(12,18,31,0.92), rgba(18,24,36,0.86))'
+      }
+      _dark={{
+        bgGradient: backgroundColor
+          ? undefined
+          : 'linear(to-br, rgba(8,10,16,0.9), rgba(6,9,14,0.9))',
+      }}
     >
       <Flex position="absolute" top={4} left={4} gap={2} flexWrap="wrap" zIndex={2}>
         <Badge bg={overlayBg} backdropFilter="blur(12px)" borderRadius="full" px={3} py={1}>

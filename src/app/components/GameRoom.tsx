@@ -59,6 +59,10 @@ import RoundCompletionModal from './RoundCompletionModal'
 import { MENSAGEM_PENDENTE } from '../types/Constants'
 import { Table, Thead, Tbody, Tr, Th, Td, Tag, TagLabel } from '@chakra-ui/react'
 
+interface GameRoomProps {
+  fullScreenLake?: boolean
+}
+
 function RoundSummaryTable({
   gameState,
   meId,
@@ -247,7 +251,7 @@ const initialState: GameState = {
   rodadas: [],
 }
 
-export default function GameRoom() {
+export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
   const toast = useToast({ position: 'top-right' })
   const { isOpen: isInstructionsOpen, onOpen: onInstructionsOpen, onClose: onInstructionsClose } = useDisclosure()
   const { isOpen: isStatsOpen, onToggle: onStatsToggle } = useDisclosure()
@@ -639,9 +643,45 @@ export default function GameRoom() {
   }
 
   return (
-    <Box minH="100vh" bg="gray.50" pb={8}>
+    <Box
+      minH="100vh"
+      pb={8}
+      position="relative"
+      overflow="hidden"
+      bg={fullScreenLake ? 'transparent' : 'gray.50'}
+    >
+      {fullScreenLake && (
+        <Box position="fixed" inset={0} zIndex={-1} pointerEvents="none">
+          <LakeScene
+            fishCount={gameState.quantidadePeixesLago}
+            playerCount={jogadores.length}
+            currentRound={currentRound}
+            isGameActive={!gameState.jogoFinalizado}
+            height="100vh"
+            backgroundColor={0x0d1723}
+            fishOpacity={0.5}
+            boatColors={[0x6b5845, 0x4a4f55, 0x8c7a65, 0x5c5750]}
+            speedFactor={0.6}
+            fishSize={6}
+            fishTrailSize={3}
+            fishTrailLength={18}
+            boatSize={32}
+            surface={{ enabled: true, opacity: 0.06, tint: 0xffffff }}
+            fullScreen
+          />
+        </Box>
+      )}
       {/* Header */}
-      <Box bg="brand.500" color="white" py={6} px={4} boxShadow="md">
+      <Box
+        //bg="brand.500"
+        bg="transparent"
+        color="white"
+        py={6}
+        px={4}
+        boxShadow="none"
+        position="relative"
+        zIndex={2}
+      >
         <Container maxW="container.xl">
           <Flex justify="space-between" align="center" flexWrap="wrap" gap={4}>
             <Heading size="lg">Common Pool Resource Game</Heading>
@@ -678,7 +718,13 @@ export default function GameRoom() {
         </Container>
       </Box>
 
-      <Container maxW="container.xl" mt={8}>
+      <Container
+        maxW={fullScreenLake ? '1200px' : 'container.xl'}
+        mt={8}
+        position="relative"
+        zIndex={1}
+        px={fullScreenLake ? { base: 4, md: 6 } : undefined}
+      >
         <VStack spacing={8} align="stretch">
           {/* Game Stats */}
           <GameStats
@@ -686,9 +732,15 @@ export default function GameRoom() {
             lakeFishCount={gameState.quantidadePeixesLago}
             bankTotal={gameState.quantidadeBanca}
             currentRound={currentRound}
-            totalRounds={gameState.limiteRodadas}
-            growthRate={gameState.taxaCrescimento}
-          />
+          totalRounds={gameState.limiteRodadas}
+          growthRate={gameState.taxaCrescimento}
+        />
+
+          {isStatsOpen && (
+            <Card borderRadius="2xl" boxShadow="float" p={4}>
+              <GameChart rounds={gameState.rodadas} playerCount={jogadores.length} />
+            </Card>
+          )}
 
           {isConfigOpen && (
             <Card borderRadius="2xl" boxShadow="float">
@@ -733,7 +785,7 @@ export default function GameRoom() {
           )}
 
           {/* Lake Scene */}
-          {!isStatsOpen ? (
+          {!fullScreenLake && (
             <LakeScene
               fishCount={gameState.quantidadePeixesLago}
               playerCount={jogadores.length}
@@ -741,10 +793,6 @@ export default function GameRoom() {
               isGameActive={!gameState.jogoFinalizado}
               height="420px"
             />
-          ) : (
-            <Card borderRadius="2xl" boxShadow="float" p={4}>
-              <GameChart rounds={gameState.rodadas} playerCount={jogadores.length} />
-            </Card>
           )}
 
           {/* Main Game Area */}

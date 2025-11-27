@@ -75,8 +75,8 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
   })
 
   return (
-    <Card borderRadius="xl" boxShadow="md" overflow="hidden" h="100%">
-      <CardHeader bg="brand.500" py={3} px={4}>
+    <Card borderRadius="xl" boxShadow="float" overflow="hidden" h="100%" bg="rgba(255,255,255,0.9)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(12,18,31,0.12)">
+      <CardHeader bgGradient="linear(to-r, accent.500, accent.600)" py={3} px={4}>
         <Heading size="sm" color="white">
           Game Chat
         </Heading>
@@ -87,7 +87,8 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
           flex="1"
           overflowY="auto"
           p={4}
-          bg="gray.50"
+          bg="rgba(12,18,31,0.04)"
+          _dark={{ bg: 'rgba(255,255,255,0.03)' }}
           maxH="300px"
           minH="200px"
         >
@@ -104,21 +105,21 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
                     name={msg.playerName}
                     src={msg.playerPhoto}
                     border="2px"
-                    borderColor="brand.200"
+                    borderColor="accent.200"
                   />
                   <Box
                     flex="1"
-                    bg="white"
+                    bg="rgba(255,255,255,0.95)"
+                    _dark={{ bg: 'rgba(20,24,32,0.9)' }}
                     borderRadius="lg"
                     p={3}
-                    boxShadow="sm"
-                    border="1px"
-                    borderColor="gray.200"
+                    boxShadow="soft"
+                    border="1px solid rgba(12,18,31,0.08)"
                   >
-                    <Text fontSize="xs" fontWeight="600" color="brand.600" mb={1}>
+                    <Text fontSize="xs" fontWeight="600" color="accent.600" _dark={{ color: 'accent.200' }} mb={1}>
                       {msg.playerName}
                     </Text>
-                    <Text fontSize="sm" color="gray.800">
+                    <Text fontSize="sm" color="ink.800" _dark={{ color: 'paper.100' }}>
                       {msg.message}
                     </Text>
                   </Box>
@@ -132,19 +133,19 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
         <Divider />
 
         {/* Input Area */}
-        <HStack p={4} bg="white" spacing={2}>
+        <HStack p={4} bg="rgba(255,255,255,0.95)" _dark={{ bg: 'rgba(20,24,32,0.9)' }} spacing={2}>
           <Input
             ref={inputRef}
             placeholder="Type your message..."
             onKeyPress={handleKeyPress}
             borderRadius="lg"
-            bg="gray.50"
-            border="1px"
-            borderColor="gray.300"
-            _hover={{ borderColor: 'brand.400' }}
+            bg="rgba(12,18,31,0.04)"
+            _dark={{ bg: 'rgba(255,255,255,0.06)' }}
+            border="1px solid rgba(12,18,31,0.12)"
+            _hover={{ borderColor: 'accent.300' }}
             _focus={{
-              borderColor: 'brand.500',
-              boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)',
+              borderColor: 'accent.400',
+              boxShadow: '0 0 0 1px var(--chakra-colors-accent-400)',
               bg: 'white',
             }}
           />
@@ -152,8 +153,8 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
             aria-label="Send message"
             icon={<FaPaperPlane />}
             onClick={handleSend}
-            colorScheme="brand"
-            borderRadius="lg"
+            variant="primary"
+            borderRadius="pill"
             size="md"
           />
         </HStack>

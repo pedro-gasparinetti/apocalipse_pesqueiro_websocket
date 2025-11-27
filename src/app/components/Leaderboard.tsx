@@ -58,8 +58,8 @@ export default function Leaderboard({ players, currentPlayerId }: LeaderboardPro
   }
 
   return (
-    <Card borderRadius="xl" boxShadow="md" overflow="hidden">
-      <Box bg="brand.500" px={6} py={4}>
+    <Card borderRadius="xl" boxShadow="float" overflow="hidden" bg="rgba(255,255,255,0.9)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(12,18,31,0.12)">
+      <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4}>
         <Heading size="md" color="white">
           Leaderboard
         </Heading>
@@ -73,14 +73,14 @@ export default function Leaderboard({ players, currentPlayerId }: LeaderboardPro
               borderBottom={index < sortedPlayers.length - 1 ? '1px' : 'none'}
               borderColor="gray.200"
               transition="all 0.2s"
-              _hover={{ bg: 'brand.50' }}
+              _hover={{ bg: 'rgba(91,141,239,0.08)' }}
             >
               <HStack
                 p={4}
                 spacing={4}
-                bg={player.id === currentPlayerId ? 'brand.100' : 'transparent'}
+                bg={player.id === currentPlayerId ? 'rgba(91,141,239,0.1)' : 'transparent'}
                 borderLeft={player.id === currentPlayerId ? '4px' : 'none'}
-                borderColor="brand.500"
+                borderColor="accent.500"
               >
                 <Flex w="40px" justify="center" align="center">
                   {getRankIcon(index) || (
@@ -115,7 +115,7 @@ export default function Leaderboard({ players, currentPlayerId }: LeaderboardPro
                 </Box>
 
                 <VStack spacing={0} align="end">
-                  <Text fontWeight="bold" fontSize="2xl" color="brand.600">
+                  <Text fontWeight="bold" fontSize="2xl" color="accent.600" _dark={{ color: 'accent.200' }}>
                     {player.fishCount.toFixed(1)}
                   </Text>
                   <Text fontSize="xs" color="gray.500" textTransform="uppercase">

@@ -36,8 +36,8 @@ export default function PlayerSelector({
   canInspect,
 }: PlayerSelectorProps) {
   return (
-    <Card borderRadius="xl" boxShadow="md" overflow="hidden">
-      <Box bg="brand.500" px={6} py={4}>
+    <Card borderRadius="xl" boxShadow="float" overflow="hidden" bg="rgba(255,255,255,0.9)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(12,18,31,0.12)">
+      <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4}>
         <HStack justify="space-between">
           <Heading size="md" color="white">
             <HStack>
@@ -46,7 +46,7 @@ export default function PlayerSelector({
             </HStack>
           </Heading>
           {!canInspect && (
-            <Badge colorScheme="red" fontSize="sm">
+            <Badge colorScheme="red" fontSize="sm" borderRadius="full" px={3}>
               Can't inspect while overfishing
             </Badge>
           )}
@@ -66,18 +66,18 @@ export default function PlayerSelector({
                   key={player.id}
                   p={4}
                   borderRadius="lg"
-                  border="2px"
-                  borderColor={isSelected ? 'brand.500' : 'gray.200'}
-                  bg={isSelected ? 'brand.50' : 'white'}
+                  border="1px solid"
+                  borderColor={isSelected ? 'accent.400' : 'rgba(12,18,31,0.12)'}
+                  bg={isSelected ? 'rgba(91,141,239,0.08)' : 'rgba(255,255,255,0.9)'}
                   cursor={canInspect ? 'pointer' : 'not-allowed'}
                   opacity={canInspect ? 1 : 0.6}
                   transition="all 0.2s"
                   _hover={
                     canInspect
                       ? {
-                          borderColor: 'brand.400',
+                          borderColor: 'accent.400',
                           transform: 'translateY(-4px)',
-                          boxShadow: 'lg',
+                          boxShadow: 'float',
                         }
                       : {}
                   }
@@ -90,7 +90,7 @@ export default function PlayerSelector({
                       position="absolute"
                       top={2}
                       right={2}
-                      color="brand.500"
+                      color="accent.500"
                       boxSize={6}
                     />
                   )}
@@ -100,13 +100,13 @@ export default function PlayerSelector({
                       name={player.name}
                       src={player.photo}
                       border="3px"
-                      borderColor={isSelected ? 'brand.500' : 'gray.300'}
+                      borderColor={isSelected ? 'accent.500' : 'gray.300'}
                     />
                     <VStack spacing={1}>
                       <Text
                         fontWeight="600"
                         fontSize="md"
-                        color={isSelected ? 'brand.700' : 'gray.800'}
+                        color={isSelected ? 'accent.700' : 'ink.700'}
                         textAlign="center"
                       >
                         {player.name}

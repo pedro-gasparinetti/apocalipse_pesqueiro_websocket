@@ -1,272 +1,189 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Application, Container, Graphics, Text, TextStyle, Sprite, Assets } from 'pixi.js'
-import { Box } from '@chakra-ui/react'
+import { Application, Container, Graphics } from 'pixi.js'
+import { Box, Flex, Badge, Text, useColorModeValue } from '@chakra-ui/react'
 
 interface LakeSceneProps {
   fishCount: number
   playerCount: number
   currentRound: number
   isGameActive: boolean
+  height?: string | number
 }
 
-export default function LakeScene({ fishCount, playerCount, currentRound, isGameActive }: LakeSceneProps) {
+type Fish = { sprite: Graphics; vx: number; vy: number; history: { x: number; y: number }[] }
+type Boat = { graphic: Graphics; vx: number; phase: number }
+
+export default function LakeScene({
+  fishCount,
+  playerCount,
+  currentRound,
+  isGameActive,
+  height = 'calc(100vh - 200px)',
+}: LakeSceneProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const appRef = useRef<Application | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const stateRef = useRef({ fishCount, playerCount, currentRound, isGameActive })
+  const [ready, setReady] = useState(false)
+
+  const borderColor = useColorModeValue('rgba(12,18,31,0.14)', 'rgba(255,255,255,0.14)')
+  const overlayBg = useColorModeValue('rgba(255,255,255,0.75)', 'rgba(12,16,24,0.6)')
 
   useEffect(() => {
-    if (!canvasRef.current) return
+    stateRef.current = { fishCount, playerCount, currentRound, isGameActive }
+  }, [fishCount, playerCount, currentRound, isGameActive])
+
+  useEffect(() => {
+    const container = canvasRef.current
+    if (!container) return
 
     let mounted = true
-    const initPixi = async () => {
-      try {
-        // Create PixiJS application
-        const app = new Application()
-        await app.init({
-          width: 800,
-          height: 400,
-          backgroundColor: 0x2B6CB0,
-          antialias: true,
-          resolution: window.devicePixelRatio || 1,
-          autoDensity: true,
+    const app = new Application()
+
+    const init = async () => {
+      await app.init({
+        resizeTo: container,
+        backgroundAlpha: 0,
+        antialias: true,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+      })
+
+      if (!mounted) return
+      appRef.current = app
+      container.appendChild(app.canvas)
+
+      const lakeLayer = new Graphics()
+      const trailLayer = new Graphics()
+      const fishLayer = new Container()
+      const boatsLayer = new Container()
+
+      app.stage.addChild(lakeLayer)
+      app.stage.addChild(trailLayer)
+      app.stage.addChild(fishLayer)
+      app.stage.addChild(boatsLayer)
+
+      const accent = 0x5b8def
+      const water = 0x0f1624
+
+      const drawLake = () => {
+        const { width, height } = app.renderer
+        lakeLayer.clear()
+        lakeLayer.rect(0, 0, width, height)
+        lakeLayer.fill({ color: water, alpha: 0.85 })
+        lakeLayer.stroke({ color: 0xffffff, alpha: 0.08, width: 1 })
+      }
+      drawLake()
+
+      const boats: Boat[] = []
+      const fishes: Fish[] = []
+
+      const createBoat = (index: number) => {
+        const g = new Graphics()
+        const size = 30
+        g.roundRect(-size / 2, -size / 2, size, size, 6)
+        g.fill({ color: accent, alpha: 0.9 })
+        g.stroke({ color: 0xffffff, alpha: 0.4, width: 1 })
+        g.rect(-size / 4, -size / 4, size / 2, size / 2)
+        g.fill({ color: 0x0f172a, alpha: 0.6 })
+        g.x = (index + 1) * 140
+        g.y = app.renderer.height * 0.22 + Math.sin(index) * 12
+        boatsLayer.addChild(g)
+        boats.push({ graphic: g, vx: Math.random() * 0.6 + 0.4, phase: Math.random() * Math.PI })
+      }
+
+      const createFish = () => {
+        const s = new Graphics()
+        s.rect(-3, -3, 6, 6)
+        s.fill({ color: 0xffffff, alpha: 0.9 })
+        s.stroke({ color: accent, alpha: 0.65, width: 1 })
+        const { width, height } = app.renderer
+        s.x = Math.random() * width
+        s.y = height * 0.42 + Math.random() * height * 0.45
+        fishLayer.addChild(s)
+        return {
+          sprite: s,
+          vx: (Math.random() - 0.5) * 1.2,
+          vy: (Math.random() - 0.5) * 1.2,
+          history: [] as { x: number; y: number }[],
+        }
+      }
+
+      const handleResize = () => drawLake()
+      const resizeObserver = new ResizeObserver(handleResize)
+      resizeObserver.observe(container)
+
+      let frame = 0
+      app.ticker.add((delta) => {
+        frame += delta.deltaTime
+        const { width, height } = app.renderer
+
+        // Boats move gently and bounce on edges
+        while (boats.length < Math.max(1, stateRef.current.playerCount)) createBoat(boats.length)
+        while (boats.length > stateRef.current.playerCount) {
+          const boat = boats.pop()
+          boat?.graphic.destroy()
+        }
+        boats.forEach((boat, idx) => {
+          boat.phase += 0.008 * delta.deltaTime
+          boat.graphic.x += boat.vx * delta.deltaTime
+          boat.graphic.y = height * 0.22 + Math.sin(frame * 0.012 + idx) * 10
+          boat.graphic.rotation = Math.sin(frame * 0.004 + idx) * 0.02
+          if (boat.graphic.x > width - 40 || boat.graphic.x < 40) boat.vx *= -1
         })
 
-        if (!mounted) {
-          app.destroy()
-          return
+        // Fish population control
+        const targetFish = Math.max(8, Math.min(240, Math.round(stateRef.current.fishCount)))
+        while (fishes.length < targetFish) fishes.push(createFish())
+        while (fishes.length > targetFish) {
+          const removed = fishes.pop()
+          removed?.sprite.destroy()
         }
 
-        appRef.current = app
-        canvasRef.current?.appendChild(app.canvas)
+        // Trails + smooth fish motion
+        trailLayer.clear()
+        fishes.forEach((fish, idx) => {
+          fish.vx += Math.sin(frame * 0.01 + idx) * 0.006
+          fish.vy += Math.cos(frame * 0.012 + idx) * 0.006
+          fish.vx = Math.max(Math.min(fish.vx, 1.8), -1.8)
+          fish.vy = Math.max(Math.min(fish.vy, 1.6), -1.6)
 
-        // Create lake background
-        const lake = new Graphics()
-        lake.rect(0, 0, 800, 400)
-        lake.fill({ color: 0x3182CE })
-        app.stage.addChild(lake)
+          fish.sprite.x += fish.vx * delta.deltaTime
+          fish.sprite.y += fish.vy * delta.deltaTime
 
-        // Add water ripple effect
-        const ripples = new Graphics()
-        app.stage.addChild(ripples)
+          if (fish.sprite.x > width + 10) fish.sprite.x = -10
+          if (fish.sprite.x < -10) fish.sprite.x = width + 10
 
-        let ripplePhase = 0
-        const drawRipples = () => {
-          ripples.clear()
-          ripples.alpha = 0.1
-
-          for (let i = 0; i < 10; i++) {
-            const y = i * 50 + (Math.sin(ripplePhase + i * 0.5) * 5)
-            ripples.moveTo(0, y)
-            ripples.lineTo(800, y)
-            ripples.stroke({ color: 0xFFFFFF, width: 1 })
+          const minY = height * 0.32
+          const maxY = height * 0.92
+          if (fish.sprite.y > maxY) {
+            fish.sprite.y = maxY
+            fish.vy *= -0.6
           }
-        }
-
-        // Create boats container
-        const boatsContainer = new Container()
-        app.stage.addChild(boatsContainer)
-
-        // Create fish container
-        const fishContainer = new Container()
-        app.stage.addChild(fishContainer)
-
-        // Create bubble particles
-        const bubblesContainer = new Container()
-        app.stage.addChild(bubblesContainer)
-
-        const bubbles: Graphics[] = []
-        const createBubble = () => {
-          const bubble = new Graphics()
-          const size = Math.random() * 3 + 1
-          bubble.circle(0, 0, size)
-          bubble.fill({ color: 0xFFFFFF, alpha: 0.3 })
-          bubble.x = Math.random() * 800
-          bubble.y = 400 + Math.random() * 50
-          bubble.alpha = Math.random() * 0.5 + 0.2
-          return bubble
-        }
-
-        // Initialize bubbles
-        for (let i = 0; i < 30; i++) {
-          const bubble = createBubble()
-          bubbles.push(bubble)
-          bubblesContainer.addChild(bubble)
-        }
-
-        // Create boats for players
-        const boats: Graphics[] = []
-        const createBoat = (x: number, color: number) => {
-          const boat = new Graphics()
-
-          // Boat hull
-          boat.moveTo(0, 10)
-          boat.lineTo(30, 10)
-          boat.lineTo(35, 20)
-          boat.lineTo(-5, 20)
-          boat.closePath()
-          boat.fill({ color: color })
-
-          // Boat outline
-          boat.moveTo(0, 10)
-          boat.lineTo(30, 10)
-          boat.lineTo(35, 20)
-          boat.lineTo(-5, 20)
-          boat.closePath()
-          boat.stroke({ color: 0x000000, width: 1 })
-
-          // Mast
-          boat.rect(13, -10, 2, 20)
-          boat.fill({ color: 0x8B4513 })
-
-          // Sail
-          boat.moveTo(15, -5)
-          boat.lineTo(25, 0)
-          boat.lineTo(15, 5)
-          boat.closePath()
-          boat.fill({ color: 0xFFFFFF })
-
-          boat.x = x
-          boat.y = 80
-
-          return boat
-        }
-
-        // Position boats based on player count
-        const boatColors = [0xE53E3E, 0x3182CE, 0x38A169, 0xD69E2E, 0x805AD5, 0xD53F8C]
-        for (let i = 0; i < playerCount && i < 6; i++) {
-          const x = 100 + (i * 120)
-          const boat = createBoat(x, boatColors[i % boatColors.length])
-          boats.push(boat)
-          boatsContainer.addChild(boat)
-        }
-
-        // Create fish sprites
-        const fishSprites: Graphics[] = []
-        const createFish = () => {
-          const fish = new Graphics()
-
-          // Fish body
-          fish.ellipse(0, 0, 8, 4)
-          fish.fill({ color: 0xFFA500 })
-
-          // Fish tail
-          fish.moveTo(-8, 0)
-          fish.lineTo(-12, -3)
-          fish.lineTo(-12, 3)
-          fish.closePath()
-          fish.fill({ color: 0xFF8C00 })
-
-          // Fish eye
-          fish.circle(4, -1, 1)
-          fish.fill({ color: 0x000000 })
-
-          // Random position
-          fish.x = Math.random() * 800
-          fish.y = 150 + Math.random() * 200
-
-          return fish
-        }
-
-        // Fish info text
-        const fishTextStyle = new TextStyle({
-          fontFamily: 'Inter, Arial, sans-serif',
-          fontSize: 24,
-          fontWeight: 'bold',
-          fill: 0xFFFFFF,
-          dropShadow: {
-            color: 0x000000,
-            blur: 4,
-            angle: Math.PI / 6,
-            distance: 2,
-          },
-        })
-
-        const fishText = new Text({
-          text: `Fish in Lake: ${fishCount}`,
-          style: fishTextStyle,
-        })
-        fishText.x = 20
-        fishText.y = 20
-        app.stage.addChild(fishText)
-
-        // Round info text
-        const roundText = new Text({
-          text: `Round: ${currentRound}`,
-          style: fishTextStyle,
-        })
-        roundText.x = 600
-        roundText.y = 20
-        app.stage.addChild(roundText)
-
-        // Animation loop
-        let animationFrame = 0
-        app.ticker.add((delta) => {
-          animationFrame += delta.deltaTime
-          ripplePhase += 0.05 * delta.deltaTime
-          drawRipples()
-
-          // Animate boats (gentle bobbing)
-          boats.forEach((boat, i) => {
-            boat.y = 80 + Math.sin(animationFrame * 0.05 + i) * 3
-          })
-
-          // Animate bubbles rising
-          bubbles.forEach((bubble, i) => {
-            bubble.y -= 0.5 + (bubble.scale.x * 0.3)
-            bubble.x += Math.sin(animationFrame * 0.02 + i) * 0.2
-
-            // Reset bubble when it reaches top
-            if (bubble.y < -10) {
-              bubble.y = 410
-              bubble.x = Math.random() * 800
-            }
-          })
-
-          // Update fish count dynamically
-          const targetFishCount = Math.min(fishCount, 100) // Cap visual fish at 100 for performance
-
-          // Add or remove fish to match count
-          while (fishSprites.length < targetFishCount) {
-            const fish = createFish()
-            fishSprites.push(fish)
-            fishContainer.addChild(fish)
+          if (fish.sprite.y < minY) {
+            fish.sprite.y = minY
+            fish.vy *= -0.6
           }
 
-          while (fishSprites.length > targetFishCount) {
-            const fish = fishSprites.pop()
-            if (fish) {
-              fishContainer.removeChild(fish)
-              fish.destroy()
-            }
-          }
-
-          // Animate existing fish
-          fishSprites.forEach((fish, i) => {
-            fish.x += Math.sin(animationFrame * 0.02 + i) * 0.5
-            fish.y += Math.cos(animationFrame * 0.03 + i * 0.5) * 0.3
-
-            // Wrap around screen
-            if (fish.x > 820) fish.x = -20
-            if (fish.x < -20) fish.x = 820
-            if (fish.y > 380) fish.y = 150
-            if (fish.y < 140) fish.y = 370
+          fish.history.unshift({ x: fish.sprite.x, y: fish.sprite.y })
+          fish.history = fish.history.slice(0, 14)
+          fish.history.forEach((point, i) => {
+            const alpha = 0.22 * (1 - i / fish.history.length)
+            trailLayer.rect(point.x - 1.5, point.y - 1.5, 3, 3)
+            trailLayer.fill({ color: accent, alpha })
           })
-
-          // Update text
-          fishText.text = `Fish in Lake: ${fishCount.toFixed(1)}`
-          roundText.text = `Round: ${currentRound}`
         })
+      })
 
-        setIsLoading(false)
-      } catch (error) {
-        console.error('Error initializing PixiJS:', error)
-        setIsLoading(false)
+      setReady(true)
+
+      return () => {
+        resizeObserver.disconnect()
       }
     }
 
-    initPixi()
+    init()
 
     return () => {
       mounted = false
@@ -275,38 +192,51 @@ export default function LakeScene({ fishCount, playerCount, currentRound, isGame
         appRef.current = null
       }
     }
-  }, []) // Only initialize once
-
-  // Update effect for dynamic values
-  useEffect(() => {
-    // Values are updated in the ticker loop
-  }, [fishCount, playerCount, currentRound])
+  }, [])
 
   return (
     <Box
       ref={canvasRef}
-      w="100%"
-      maxW="800px"
-      h="400px"
-      borderRadius="xl"
-      overflow="hidden"
-      boxShadow="2xl"
       position="relative"
-      bg="brand.500"
-      mx="auto"
+      w="100%"
+      h={height}
+      borderRadius="2xl"
+      border={`1px solid ${borderColor}`}
+      overflow="hidden"
+      boxShadow="float"
+      bgGradient="linear(to-br, rgba(12,18,31,0.92), rgba(18,24,36,0.86))"
+      _dark={{ bgGradient: 'linear(to-br, rgba(8,10,16,0.9), rgba(6,9,14,0.9))' }}
     >
-      {isLoading && (
-        <Box
-          position="absolute"
-          top="50%"
-          left="50%"
-          transform="translate(-50%, -50%)"
-          color="white"
-          fontSize="xl"
-          fontWeight="bold"
-        >
+      <Flex position="absolute" top={4} left={4} gap={2} flexWrap="wrap" zIndex={2}>
+        <Badge bg={overlayBg} backdropFilter="blur(12px)" borderRadius="full" px={3} py={1}>
+          Round {currentRound}
+        </Badge>
+        <Badge bg={overlayBg} borderRadius="full" px={3} py={1}>
+          Fish {Math.round(fishCount)}
+        </Badge>
+        <Badge bg={overlayBg} borderRadius="full" px={3} py={1}>
+          Boats {playerCount}
+        </Badge>
+      </Flex>
+      {!ready && (
+        <Flex position="absolute" inset={0} align="center" justify="center" color="white" fontWeight={700}>
           Loading lake scene...
-        </Box>
+        </Flex>
+      )}
+      {!isGameActive && (
+        <Flex
+          position="absolute"
+          bottom={4}
+          right={4}
+          px={3}
+          py={2}
+          borderRadius="lg"
+          bg={overlayBg}
+          backdropFilter="blur(10px)"
+          fontSize="sm"
+        >
+          <Text>Paused</Text>
+        </Flex>
       )}
     </Box>
   )

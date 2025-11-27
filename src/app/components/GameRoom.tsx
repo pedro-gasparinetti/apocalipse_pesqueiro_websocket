@@ -26,6 +26,8 @@ import {
   useToast,
   Spinner,
   Center,
+  Input,
+  SimpleGrid,
 } from '@chakra-ui/react'
 import { FaInfoCircle, FaRedo, FaCog, FaChartBar, FaUsers } from 'react-icons/fa'
 import {
@@ -55,6 +57,181 @@ import ResultadoFinal from './ResultadoFinal'
 import ChatBox from './ChatBox'
 import RoundCompletionModal from './RoundCompletionModal'
 import { MENSAGEM_PENDENTE } from '../types/Constants'
+import { Table, Thead, Tbody, Tr, Th, Td, Tag, TagLabel } from '@chakra-ui/react'
+
+function RoundSummaryTable({
+  gameState,
+  meId,
+  custoFiscalizacao,
+  jogadores,
+}: {
+  gameState: GameState
+  meId?: string
+  custoFiscalizacao: number
+  jogadores: PlayerState[]
+}) {
+  const totalRounds = Math.max(gameState.limiteRodadas, gameState.rodadas.length)
+  const ranking = [...jogadores].sort((a, b) => (b.getState(PEIXES_CESTO) || 0) - (a.getState(PEIXES_CESTO) || 0))
+
+  return (
+    <Card borderRadius="2xl" boxShadow="float">
+      <Box px={6} py={4} borderBottom="1px solid" borderColor="rgba(12,18,31,0.08)">
+        <Heading size="md">Resumo das Rodadas</Heading>
+      </Box>
+      <CardBody overflowX="auto">
+        <Table size="sm">
+          <Thead>
+            <Tr>
+              <Th>Rodada</Th>
+              <Th>Peixes no Lago</Th>
+              <Th>Seu resultado</Th>
+              <Th>Acumulado</Th>
+              <Th>Fiscalizou?</Th>
+              <Th>Foi fiscalizado?</Th>
+              <Th>Banca acum.</Th>
+              <Th>Crescimento acum.</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {Array.from({ length: totalRounds }, (_, idx) => {
+              const rodadaNumero = idx + 1
+              const rodada = gameState.rodadas.find((r) => r.numero === rodadaNumero)
+              const bancaAcumulada = gameState.rodadas
+                .filter((r) => r.numero <= rodadaNumero)
+                .reduce((acc, r) => acc + (r.saldoBanca || 0), 0)
+              const crescimentoAcumulado = gameState.rodadas
+                .filter((r) => r.numero <= rodadaNumero)
+                .reduce((acc, r) => acc + (r.crescimentoLago || 0), 0)
+              const jogada = rodada?.jogadas.find((j) => j.idJogador === meId)
+              let pescou = '-'
+              let acumulado = '-'
+              if (rodada && jogada && meId) {
+                if (jogada.roubou && jogada.fiscalizadoPor && jogada.fiscalizadoPor.length > 0) {
+                  pescou = '0 (fiscalizado)'
+                } else {
+                  const distrib = distribuirPeixesProporcional(
+                    rodada.jogadas.map((j) => ({ idJogador: j.idJogador, quantidadePescada: j.quantidadePescada })),
+                    rodada.quantidadeLagoInicial
+                  )
+                  let pescouVal = distrib[meId] || 0
+                  pescouVal -= jogada.jogadorAFiscalizar ? custoFiscalizacao : 0
+                  if (jogada.jogadorAFiscalizar) {
+                    const fiscalizado = rodada.jogadas.find((j) => j.idJogador === jogada.jogadorAFiscalizar)
+                    if (fiscalizado?.roubou && fiscalizado?.rateioPerdido) {
+                      pescouVal += fiscalizado.rateioPerdido
+                    }
+                  }
+                  pescou = pescouVal.toFixed(1)
+                }
+
+                // acumulado até esta rodada
+                let accVal = 0
+                gameState.rodadas
+                  .filter((r) => r.numero <= rodadaNumero)
+                  .forEach((r) => {
+                    const j = r.jogadas.find((jg) => jg.idJogador === meId)
+                    if (!j) return
+                    if (j.roubou && j.fiscalizadoPor && j.fiscalizadoPor.length > 0) return
+                    const distrib = distribuirPeixesProporcional(
+                      r.jogadas.map((jg) => ({ idJogador: jg.idJogador, quantidadePescada: jg.quantidadePescada })),
+                      r.quantidadeLagoInicial
+                    )
+                    let val = distrib[meId] || 0
+                    val -= j.jogadorAFiscalizar ? custoFiscalizacao : 0
+                    if (j.jogadorAFiscalizar) {
+                      const fiscalizado = r.jogadas.find((jf) => jf.idJogador === j.jogadorAFiscalizar)
+                      if (fiscalizado?.roubou && fiscalizado?.rateioPerdido) {
+                        val += fiscalizado.rateioPerdido
+                      }
+                    }
+                    accVal += val
+                  })
+                acumulado = accVal.toFixed(1)
+              }
+
+              return (
+                <Tr key={rodadaNumero} opacity={rodada ? 1 : 0.6}>
+                  <Td>{rodadaNumero}</Td>
+                  <Td>{rodada ? rodada.quantidadeLagoInicial.toFixed(1) : '-'}</Td>
+                  <Td>{pescou}</Td>
+                  <Td fontWeight="700">{acumulado}</Td>
+                  <Td>{jogada ? (jogada.jogadorAFiscalizar ? '✓' : '✗') : '-'}</Td>
+                  <Td>{jogada ? (jogada.fiscalizadoPor && jogada.fiscalizadoPor.length > 0 ? '✓' : '✗') : '-'}</Td>
+                  <Td>{rodada ? bancaAcumulada.toFixed(1) : '-'}</Td>
+                  <Td>{rodada ? crescimentoAcumulado.toFixed(1) : '-'}</Td>
+                </Tr>
+              )
+            })}
+            <Tr bg="rgba(91,141,239,0.08)">
+              <Td fontWeight="700">Total</Td>
+              <Td>-</Td>
+              <Td>-</Td>
+              <Td fontWeight="800">{(gameState.rodadas.length > 0 && meId ? computeTotal(gameState, meId, custoFiscalizacao) : 0).toFixed(1)}</Td>
+              <Td>{gameState.rodadas.filter((r) => r.jogadas.some((j) => j.idJogador === meId && j.jogadorAFiscalizar)).length}</Td>
+              <Td>{gameState.rodadas.filter((r) => r.jogadas.some((j) => j.idJogador === meId && j.fiscalizadoPor && j.fiscalizadoPor.length > 0)).length}</Td>
+              <Td>{gameState.quantidadeBanca.toFixed(1)}</Td>
+              <Td>{gameState.rodadas.reduce((acc, r) => acc + (r.crescimentoLago || 0), 0).toFixed(1)}</Td>
+            </Tr>
+          </Tbody>
+        </Table>
+        <Box mt={6}>
+          <Heading size="sm" mb={3}>
+            Ranking Final
+          </Heading>
+          <VStack align="stretch" spacing={2}>
+            {ranking.map((player, idx) => (
+              <HStack
+                key={player.id}
+                justify="space-between"
+                px={3}
+                py={2}
+                borderRadius="md"
+                bg={idx === 0 ? 'rgba(255,235,59,0.2)' : 'rgba(12,18,31,0.03)'}
+                border="1px solid rgba(12,18,31,0.08)"
+              >
+                <HStack spacing={2}>
+                  <Tag borderRadius="full" colorScheme="accent">
+                    <TagLabel>#{idx + 1}</TagLabel>
+                  </Tag>
+                  <Text fontWeight="600">{player.getProfile().name}</Text>
+                  {player.id === meId && <Badge colorScheme="accent">Você</Badge>}
+                </HStack>
+                <Text fontWeight="700" color="accent.600">
+                  {(player.getState(PEIXES_CESTO) || 0).toFixed(1)} peixes
+                </Text>
+              </HStack>
+            ))}
+          </VStack>
+          <HStack justify="space-between" mt={4}>
+            <Text fontWeight="600">Resultado da Banca</Text>
+            <Text fontWeight="700">{gameState.quantidadeBanca.toFixed(1)}</Text>
+          </HStack>
+        </Box>
+      </CardBody>
+    </Card>
+  )
+}
+
+function computeTotal(gameState: GameState, meId: string, custoFiscalizacao: number) {
+  return gameState.rodadas.reduce((acc, r) => {
+    const j = r.jogadas.find((jg) => jg.idJogador === meId)
+    if (!j) return acc
+    if (j.roubou && j.fiscalizadoPor && j.fiscalizadoPor.length > 0) return acc
+    const distrib = distribuirPeixesProporcional(
+      r.jogadas.map((jg) => ({ idJogador: jg.idJogador, quantidadePescada: jg.quantidadePescada })),
+      r.quantidadeLagoInicial
+    )
+    let val = distrib[meId] || 0
+    val -= j.jogadorAFiscalizar ? custoFiscalizacao : 0
+    if (j.jogadorAFiscalizar) {
+      const fiscalizado = r.jogadas.find((jf) => jf.idJogador === j.jogadorAFiscalizar)
+      if (fiscalizado?.roubou && fiscalizado?.rateioPerdido) {
+        val += fiscalizado.rateioPerdido
+      }
+    }
+    return acc + val
+  }, 0)
+}
 
 const initialState: GameState = {
   limiteSustentavel: 11,
@@ -70,11 +247,12 @@ const initialState: GameState = {
   rodadas: [],
 }
 
-export default function NewGameRoom() {
-  const toast = useToast()
+export default function GameRoom() {
+  const toast = useToast({ position: 'top-right' })
   const { isOpen: isInstructionsOpen, onOpen: onInstructionsOpen, onClose: onInstructionsClose } = useDisclosure()
   const { isOpen: isStatsOpen, onToggle: onStatsToggle } = useDisclosure()
   const { isOpen: isRoundCompleteOpen, onOpen: onRoundCompleteOpen, onClose: onRoundCompleteClose } = useDisclosure()
+  const { isOpen: isConfigOpen, onToggle: onConfigToggle } = useDisclosure()
 
   const [gameState, setGameState] = useMultiplayerState('gameState', initialState)
   const [quantidadePescada, setQuantidadePescada] = useState<number>(0)
@@ -86,6 +264,7 @@ export default function NewGameRoom() {
 
   const jogadores = usePlayersList(true)
   const jogadasPendentes = usePlayersState(JOGADA_PENDENTE)
+  const me = myPlayer()
 
   // Initialize game
   useEffect(() => {
@@ -97,8 +276,6 @@ export default function NewGameRoom() {
         me.setState(PEIXES_CESTO, 0)
         // Add myself to known players (no notification for myself)
         shownJoinNotifications.current.add(me.id)
-        // Open instructions on first load
-        onInstructionsOpen()
       }
 
       onPlayerJoin((playerState: PlayerState) => {
@@ -401,7 +578,34 @@ export default function NewGameRoom() {
     RPC.call('mensagemEnviada', message, RPC.Mode.HOST)
   }
 
-  const myFishCount = myPlayer()?.getState(PEIXES_CESTO) || 0
+  const computeMyTotals = () => {
+    const meFromList = jogadores.find((j) => j.id === me?.id)
+    const fishFromPlayers = meFromList?.getState(PEIXES_CESTO)
+    if (typeof fishFromPlayers === 'number') return fishFromPlayers
+    if (me?.getState(PEIXES_CESTO) != null) return me.getState(PEIXES_CESTO) as number
+    // Fallback: sum from rounds if state missing
+    return gameState.rodadas.reduce((acc, r) => {
+      const j = r.jogadas.find((jg) => jg.idJogador === me?.id)
+      if (!j) return acc
+      if (j.roubou && j.fiscalizadoPor && j.fiscalizadoPor.length > 0) return acc
+      const distrib = distribuirPeixesProporcional(
+        r.jogadas.map((jg) => ({ idJogador: jg.idJogador, quantidadePescada: jg.quantidadePescada })),
+        r.quantidadeLagoInicial
+      )
+      let pescou = distrib[me?.id || ''] || 0
+      pescou -= j.jogadorAFiscalizar ? gameState.custoFiscalizacao : 0
+      if (j.jogadorAFiscalizar) {
+        const fiscalizado = r.jogadas.find((jf) => jf.idJogador === j.jogadorAFiscalizar)
+        if (fiscalizado?.roubou && fiscalizado?.rateioPerdido) {
+          pescou += fiscalizado.rateioPerdido
+        }
+      }
+      return acc + pescou
+    }, 0)
+  }
+
+  const myFishCount = computeMyTotals()
+  const lastRound = gameState.rodadas[gameState.rodadas.length - 1]
   const currentRound = gameState.rodadas.length + 1
   const canInspect = quantidadePescada <= gameState.limiteSustentavel
 
@@ -421,7 +625,7 @@ export default function NewGameRoom() {
       message: j.getState(ULTIMA_MENSAGEM),
     }))
 
-  if (!myPlayer()?.id) {
+  if (!me?.id) {
     return (
       <Center h="100vh" bg="gray.50">
         <VStack spacing={4}>
@@ -450,10 +654,11 @@ export default function NewGameRoom() {
                 color="white"
                 _hover={{ bg: 'whiteAlpha.200' }}
               />
+              <IconButton aria-label="Stats" icon={<FaChartBar />} onClick={onStatsToggle} variant="ghost" color="white" _hover={{ bg: 'whiteAlpha.200' }} />
               <IconButton
-                aria-label="Stats"
-                icon={<FaChartBar />}
-                onClick={onStatsToggle}
+                aria-label="Game parameters"
+                icon={<FaCog />}
+                onClick={onConfigToggle}
                 variant="ghost"
                 color="white"
                 _hover={{ bg: 'whiteAlpha.200' }}
@@ -485,13 +690,62 @@ export default function NewGameRoom() {
             growthRate={gameState.taxaCrescimento}
           />
 
+          {isConfigOpen && (
+            <Card borderRadius="2xl" boxShadow="float">
+              <CardBody>
+                <HStack justify="space-between" mb={4}>
+                  <Heading size="md">Game Parameters</Heading>
+                  {!isHost() && <Badge colorScheme="blue">Read only</Badge>}
+                </HStack>
+                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                  {[
+                    { label: 'Limite sustentável', key: 'limiteSustentavel', step: 1, min: 1, max: 50 },
+                    { label: 'Limite por rodada', key: 'limitePossivelRodada', step: 1, min: 1, max: 100 },
+                    { label: 'Custo fiscalização', key: 'custoFiscalizacao', step: 1, min: 0, max: 10 },
+                    { label: 'Taxa crescimento (%)', key: 'taxaCrescimento', step: 0.01, min: 0, max: 0.5, isPercent: true },
+                    { label: 'Rodadas', key: 'limiteRodadas', step: 1, min: 1, max: 20 },
+                    { label: 'Peixes iniciais por jogador', key: 'quantidadeInicialPeixesJogador', step: 10, min: 10, max: 500 },
+                  ].map((item) => (
+                    <Box key={item.key}>
+                      <Text fontWeight="600" fontSize="sm" mb={1}>{item.label}</Text>
+                      <Input
+                        type="number"
+                        value={
+                          item.key === 'taxaCrescimento'
+                            ? (gameState.taxaCrescimento ?? 0)
+                            : (gameState as any)[item.key] ?? 0
+                        }
+                        onChange={(e) => {
+                          if (!isHost() || gameState.rodadas.length > 0) return
+                          const val = Number(e.target.value)
+                          const patch: any = {}
+                          patch[item.key] = item.key === 'taxaCrescimento' ? val : Math.max(item.min, Math.min(item.max, val))
+                          const newState = { ...gameState, ...patch }
+                          setGameState(newState, true)
+                        }}
+                        isDisabled={!isHost() || gameState.rodadas.length > 0}
+                      />
+                    </Box>
+                  ))}
+                </SimpleGrid>
+              </CardBody>
+            </Card>
+          )}
+
           {/* Lake Scene */}
-          <LakeScene
-            fishCount={gameState.quantidadePeixesLago}
-            playerCount={jogadores.length}
-            currentRound={currentRound}
-            isGameActive={!gameState.jogoFinalizado}
-          />
+          {!isStatsOpen ? (
+            <LakeScene
+              fishCount={gameState.quantidadePeixesLago}
+              playerCount={jogadores.length}
+              currentRound={currentRound}
+              isGameActive={!gameState.jogoFinalizado}
+              height="420px"
+            />
+          ) : (
+            <Card borderRadius="2xl" boxShadow="float" p={4}>
+              <GameChart rounds={gameState.rodadas} playerCount={jogadores.length} />
+            </Card>
+          )}
 
           {/* Main Game Area */}
           {!gameState.jogoFinalizado ? (
@@ -499,8 +753,8 @@ export default function NewGameRoom() {
               <GridItem>
                 <VStack spacing={6} align="stretch">
                   {/* Fishing Control */}
-                  <Card borderRadius="xl" boxShadow="md">
-                    <Box bg="lake.500" px={6} py={4} color="white">
+                  <Card borderRadius="xl" boxShadow="float" bg="rgba(255,255,255,0.9)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(12,18,31,0.12)">
+                    <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4} color="white">
                       <Heading size="md">Your Fishing Decision</Heading>
                     </Box>
                     <CardBody>
@@ -593,27 +847,17 @@ export default function NewGameRoom() {
 
               <GridItem>
                 <VStack spacing={6} align="stretch">
-                  <Leaderboard players={leaderboardPlayers} currentPlayerId={myPlayer()?.id} />
-
-                  {/* Chat Box */}
-                  <ChatBox
-                    messages={gameState.conteudoChat}
-                    players={jogadores}
-                    onSendMessage={handleSendMessage}
-                  />
-
-                  {isStatsOpen && gameState.rodadas.length > 0 && (
-                    <GameChart rounds={gameState.rodadas} playerCount={jogadores.length} />
-                  )}
+                  <Leaderboard players={leaderboardPlayers} currentPlayerId={me?.id} />
+                  <ChatBox messages={gameState.conteudoChat} players={jogadores} onSendMessage={handleSendMessage} />
                 </VStack>
               </GridItem>
             </Grid>
           ) : (
-            <ResultadoFinal
+            <RoundSummaryTable
+              gameState={gameState}
+              meId={me?.id}
+              custoFiscalizacao={gameState.custoFiscalizacao}
               jogadores={jogadores}
-              quantidadeBanca={gameState.quantidadeBanca}
-              onClick={handleReiniciarClick}
-              isAguardando={isAguardando}
             />
           )}
         </VStack>
@@ -623,7 +867,7 @@ export default function NewGameRoom() {
       <InstructionsPanel isOpen={isInstructionsOpen} onClose={onInstructionsClose} gameState={gameState} />
 
       {/* Round Completion Modal */}
-      {gameState.rodadas.length > 0 && (
+      {gameState.rodadas.length > 0 && !gameState.jogoFinalizado && (
         <RoundCompletionModal
           isOpen={isRoundCompleteOpen}
           onClose={onRoundCompleteClose}
@@ -637,23 +881,23 @@ export default function NewGameRoom() {
           }
           myFishCaught={
             (() => {
-              const lastRound = gameState.rodadas[gameState.rodadas.length - 1]
-              const myPlay = lastRound?.jogadas.find((j) => j.idJogador === myPlayer()?.id)
-              if (myPlay?.roubou && myPlay?.fiscalizadoPor && myPlay.fiscalizadoPor.length > 0) {
-                return 0
-              }
-              return myPlayer()?.getState(RESULTADO_JOGADA)?.peixesPescadosJogador || 0
+              if (!me || !lastRound) return 0
+              const myPlay = lastRound.jogadas.find((j) => j.idJogador === me.id)
+              if (!myPlay) return 0
+              if (myPlay.roubou && myPlay.fiscalizadoPor && myPlay.fiscalizadoPor.length > 0) return 0
+              if (typeof myPlay.quantidadePescada === 'number') return myPlay.quantidadePescada
+              return me.getState(RESULTADO_JOGADA)?.peixesPescadosJogador || 0
             })()
           }
           totalMyFish={myFishCount}
           wasCaughtCheating={
             (() => {
-              const lastRound = gameState.rodadas[gameState.rodadas.length - 1]
-              const myPlay = lastRound?.jogadas.find((j) => j.idJogador === myPlayer()?.id)
+              if (!me || !lastRound) return false
+              const myPlay = lastRound.jogadas.find((j) => j.idJogador === me.id)
               return Boolean(myPlay?.roubou && myPlay?.fiscalizadoPor && myPlay.fiscalizadoPor.length > 0)
             })()
           }
-          caughtSomeoneCheating={Boolean(myPlayer()?.getState(RESULTADO_JOGADA)?.rateioGanhado > 0)}
+          caughtSomeoneCheating={Boolean(me?.getState(RESULTADO_JOGADA)?.rateioGanhado > 0)}
           lakeGrowth={gameState.rodadas[gameState.rodadas.length - 1]?.crescimentoLago || 0}
         />
       )}

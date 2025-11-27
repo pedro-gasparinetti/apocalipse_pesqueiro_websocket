@@ -944,7 +944,7 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
                 </Button>
               </Box>
 
-              <Grid templateColumns={{ base: '1fr', lg: '1fr 2fr' }} gap={8}>
+              <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={8}>
                 <GridItem>
                   <Leaderboard players={jogadores.map((j) => ({
                     id: j.id,

@@ -36,8 +36,8 @@ export default function PlayerSelector({
   canInspect,
 }: PlayerSelectorProps) {
   return (
-    <Card borderRadius="xl" boxShadow="float" overflow="hidden" bg="rgba(255,255,255,0.9)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(12,18,31,0.12)">
-      <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4}>
+    <Card borderRadius="xl" boxShadow="float" overflow="hidden" bg="rgba(255,255,255,0.01)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(255,255,255,0.1)">
+      <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4} bg="transparent">
         <HStack justify="space-between">
           <Heading size="md" color="white">
             <HStack>

@@ -801,15 +801,15 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
               <GridItem>
                 <VStack spacing={6} align="stretch">
                   {/* Fishing Control */}
-                  <Card borderRadius="xl" boxShadow="float" bg="rgba(255,255,255,0.9)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(12,18,31,0.12)">
-                    <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4} color="white">
+                  <Card borderRadius="xl" boxShadow="float" bg="rgba(255,255,255,0.01)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(255,255,255,0.1)">
+                    <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4} color="white" bg="transparent">
                       <Heading size="md">Your Fishing Decision</Heading>
                     </Box>
                     <CardBody>
                       <VStack spacing={6}>
                         <Box w="100%">
                           <HStack justify="space-between" mb={4}>
-                            <Text fontWeight="600" color="gray.700">
+                            <Text fontWeight="600" color="gray.100">
                               How many fish will you catch?
                             </Text>
                             <HStack>
@@ -856,10 +856,10 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
                         <Divider />
 
                         <Box w="100%">
-                          <Text fontWeight="600" color="gray.700" mb={2}>
+                          <Text fontWeight="600" color="gray.100" mb={2}>
                             Inspection cost: <Badge colorScheme="red">{gameState.custoFiscalizacao}</Badge> fish
                           </Text>
-                          <Text fontSize="sm" color="gray.600">
+                          <Text fontSize="sm" color="gray.100">
                             {jogadorAFiscalizar
                               ? `You are inspecting a player (costs ${gameState.custoFiscalizacao} fish)`
                               : 'Select a player below to inspect them'}

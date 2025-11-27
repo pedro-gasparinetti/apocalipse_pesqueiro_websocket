@@ -191,11 +191,40 @@ export default function LakeScene({
           const boat = boats.pop()
           boat?.graphic.destroy()
         }
+
+        // Separate boats to avoid collisions
+        const minBoatDist = boatSize * 1.3
+        const repelStrength = 0.02 * speedFactor
+        for (let i = 0; i < boats.length; i++) {
+          for (let j = i + 1; j < boats.length; j++) {
+            const a = boats[i]
+            const b = boats[j]
+            const dx = b.graphic.x - a.graphic.x
+            const dy = b.graphic.y - a.graphic.y
+            const distSq = dx * dx + dy * dy
+            const minDistSq = minBoatDist * minBoatDist
+            if (distSq > 0 && distSq < minDistSq) {
+              const dist = Math.sqrt(distSq)
+              const nx = dx / dist
+              const ny = dy / dist
+              const force = ((minBoatDist - dist) / minBoatDist) * repelStrength
+              a.vx -= nx * force
+              a.vy -= ny * force
+              b.vx += nx * force
+              b.vy += ny * force
+            }
+          }
+        }
+
         boats.forEach((boat, idx) => {
           boat.phase += 0.012 * delta.deltaTime
           boat.graphic.x += boat.vx * delta.deltaTime
           boat.graphic.y += boat.vy * delta.deltaTime + Math.sin(boat.phase) * 0.15
           boat.graphic.rotation = Math.sin(frame * 0.004 + idx) * 0.02
+
+          const maxBoatSpeed = 0.9 * speedFactor
+          boat.vx = Math.max(Math.min(boat.vx, maxBoatSpeed), -maxBoatSpeed)
+          boat.vy = Math.max(Math.min(boat.vy, maxBoatSpeed), -maxBoatSpeed)
 
           const margin = boatSize * 0.6
           if (boat.graphic.x > width - margin) {

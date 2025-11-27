@@ -120,7 +120,7 @@ export default function PlayerSelector({
                   <VStack spacing={2} align="stretch">
                     <HStack spacing={3} align="center">
                       <Avatar
-                        size="md"
+                        size="sm"
                         name={player.name}
                         src={player.photo}
                         border="2px"

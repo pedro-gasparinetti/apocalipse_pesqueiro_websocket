@@ -745,15 +745,15 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
             <Card
               borderRadius="2xl"
               overflow="hidden"
-              bg="paper.50"
-              _dark={{ bg: 'paper.50' }}
-              border="1px solid rgba(12,18,31,0.14)"
+              bg="rgba(255,255,255,0.01)"
+              _dark={{ bg: 'rgba(14,18,28,0.95)' }}
+              border="1px solid rgba(255,255,255,0.1)"
               boxShadow="float"
             >
-              <Box bg="accent.500" color="white" px={6} py={4}>
+              <Box bg="transparent" color="white" px={6} py={4}>
                 <Heading size="md">Game Statistics</Heading>
               </Box>
-              <CardBody bg="white" px={{ base: 4, md: 6 }} py={5}>
+              <CardBody bg="transparent" px={{ base: 4, md: 6 }} py={5}>
                 <GameChart rounds={gameState.rodadas} playerCount={jogadores.length} />
               </CardBody>
             </Card>

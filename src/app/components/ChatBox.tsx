@@ -17,6 +17,7 @@ import {
 } from '@chakra-ui/react'
 import { FaPaperPlane } from 'react-icons/fa'
 import { useRef, useEffect } from 'react'
+import { myPlayer } from '../lib/socket-client'
 
 interface ChatMessage {
   playerName: string
@@ -34,6 +35,8 @@ interface ChatBoxProps {
 export default function ChatBox({ messages, players, onSendMessage }: ChatBoxProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const me = myPlayer()
+  const myName = me?.getProfile().name
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -98,33 +101,49 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
                 No messages yet. Start the conversation!
               </Text>
             ) : (
-              parsedMessages.map((msg) => (
-                <HStack key={msg.id} align="start" spacing={3}>
-                  <Avatar
-                    size="sm"
-                    name={msg.playerName}
-                    src={msg.playerPhoto}
-                    border="2px"
-                    borderColor="accent.200"
-                  />
-                  <Box
-                    flex="1"
-                    bg="rgba(255,255,255,0.95)"
-                    _dark={{ bg: 'rgba(20,24,32,0.9)' }}
-                    borderRadius="lg"
-                    p={3}
-                    boxShadow="soft"
-                    border="1px solid rgba(12,18,31,0.08)"
+              parsedMessages.map((msg) => {
+                const isMine = msg.playerName === myName
+                return (
+                  <HStack
+                    key={msg.id}
+                    align={isMine ? 'end' : 'start'}
+                    spacing={3}
+                    justify="flex-start"
+                    flexDir={isMine ? 'row-reverse' : 'row'}
                   >
-                    <Text fontSize="xs" fontWeight="600" color="ink.500" _dark={{ color: 'accent.200' }} mb={1}>
-                      {msg.playerName}
-                    </Text>
-                    <Text fontSize="sm" color="ink.800" _dark={{ color: 'paper.100' }}>
-                      {msg.message}
-                    </Text>
-                  </Box>
-                </HStack>
-              ))
+                    <Avatar
+                      size="sm"
+                      name={msg.playerName}
+                      src={msg.playerPhoto}
+                      border="2px"
+                      borderColor={isMine ? 'accent.400' : 'accent.200'}
+                    />
+                    <Box
+                      flex="1"
+                      bg={isMine ? 'rgba(91,141,239,0.12)' : 'rgba(255,255,255,0.95)'}
+                      _dark={{ bg: isMine ? 'rgba(91,141,239,0.16)' : 'rgba(20,24,32,0.9)' }}
+                      borderRadius="lg"
+                      p={3}
+                      boxShadow="soft"
+                      border={isMine ? '1px solid rgba(91,141,239,0.35)' : '1px solid rgba(12,18,31,0.08)'}
+                    >
+                      <Text
+                        fontSize="xs"
+                        fontWeight="600"
+                        color={isMine ? 'accent.600' : 'ink.500'}
+                        _dark={{ color: isMine ? 'accent.200' : 'accent.200' }}
+                        mb={1}
+                        textAlign="left"
+                      >
+                        {msg.playerName}
+                      </Text>
+                      <Text fontSize="sm" color="ink.800" _dark={{ color: 'paper.100' }} textAlign="left">
+                        {msg.message}
+                      </Text>
+                    </Box>
+                  </HStack>
+                )
+              })
             )}
             <div ref={messagesEndRef} />
           </VStack>

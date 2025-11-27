@@ -2,7 +2,6 @@
 
 import {
   Box,
-  SimpleGrid,
   Avatar,
   Text,
   VStack,
@@ -12,6 +11,7 @@ import {
   Card,
   CardBody,
   Heading,
+  Stack,
 } from '@chakra-ui/react'
 import { FaEye, FaCheckCircle } from 'react-icons/fa'
 
@@ -19,7 +19,6 @@ interface Player {
   id: string
   name: string
   photo: string
-  message?: string
 }
 
 interface PlayerSelectorProps {
@@ -36,21 +35,44 @@ export default function PlayerSelector({
   canInspect,
 }: PlayerSelectorProps) {
   return (
-    <Card borderRadius="xl" boxShadow="float" overflow="hidden" bg="rgba(255,255,255,0.01)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(255,255,255,0.1)">
-      <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4} bg="transparent">
-        <HStack justify="space-between">
+    <Card
+      borderRadius="xl"
+      boxShadow="float"
+      overflow="hidden"
+      bg="rgba(255,255,255,0.01)"
+      _dark={{ bg: 'rgba(14,18,28,0.95)' }}
+      border="1px solid rgba(255,255,255,0.1)"
+      h="100%"
+      display="flex"
+      flexDirection="column"
+    >
+      <Box
+        bgGradient="linear(to-r, accent.500, accent.600)"
+        px={6}
+        py={4}
+        bg="transparent"
+        position="relative"
+        minH="80px"
+      >
+        <HStack align="center" spacing={3} h="100%">
+          <Icon as={FaEye} color="white" />
           <Heading size="md" color="white">
-            <HStack>
-              <Icon as={FaEye} />
-              <Text>Inspect a Player</Text>
-            </HStack>
+            Inspect a Player
           </Heading>
-          {!canInspect && (
-            <Badge colorScheme="red" fontSize="sm" borderRadius="full" px={3}>
-              Can't inspect while overfishing
-            </Badge>
-          )}
         </HStack>
+        {!canInspect && (
+          <Badge
+            colorScheme="red"
+            fontSize="sm"
+            borderRadius="full"
+            px={3}
+            position="absolute"
+            left={6}
+            top="66px"
+          >
+            Can't inspect while overfishing
+          </Badge>
+        )}
       </Box>
       <CardBody>
         {players.length === 0 ? (
@@ -58,13 +80,13 @@ export default function PlayerSelector({
             <Text>Waiting for other players to join...</Text>
           </Box>
         ) : (
-          <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
+          <Stack spacing={3}>
             {players.map((player) => {
               const isSelected = player.id === selectedPlayerId
               return (
                 <Box
                   key={player.id}
-                  p={4}
+                  p={3}
                   borderRadius="lg"
                   border="1px solid"
                   borderColor={isSelected ? 'accent.400' : 'rgba(12,18,31,0.12)'}
@@ -83,6 +105,7 @@ export default function PlayerSelector({
                   }
                   onClick={() => canInspect && onSelectPlayer(player.id)}
                   position="relative"
+                  w="100%"
                 >
                   {isSelected && (
                     <Icon
@@ -94,40 +117,29 @@ export default function PlayerSelector({
                       boxSize={6}
                     />
                   )}
-                  <VStack spacing={3}>
-                    <Avatar
-                      size="lg"
-                      name={player.name}
-                      src={player.photo}
-                      border="3px"
-                      borderColor={isSelected ? 'accent.500' : 'gray.300'}
-                    />
-                    <VStack spacing={1}>
+                  <VStack spacing={2} align="stretch">
+                    <HStack spacing={3} align="center">
+                      <Avatar
+                        size="md"
+                        name={player.name}
+                        src={player.photo}
+                        border="2px"
+                        borderColor={isSelected ? 'accent.500' : 'gray.300'}
+                      />
                       <Text
                         fontWeight="600"
                         fontSize="md"
                         color={isSelected ? 'accent.700' : 'ink.700'}
-                        textAlign="center"
+                        noOfLines={1}
                       >
                         {player.name}
                       </Text>
-                      {player.message && (
-                        <Text
-                          fontSize="xs"
-                          color="gray.500"
-                          fontStyle="italic"
-                          textAlign="center"
-                          noOfLines={2}
-                        >
-                          "{player.message}"
-                        </Text>
-                      )}
-                    </VStack>
+                    </HStack>
                   </VStack>
                 </Box>
               )
             })}
-          </SimpleGrid>
+          </Stack>
         )}
       </CardBody>
     </Card>

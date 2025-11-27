@@ -58,8 +58,8 @@ export default function Leaderboard({ players, currentPlayerId }: LeaderboardPro
   }
 
   return (
-    <Card borderRadius="xl" boxShadow="float" overflow="hidden" bg="rgba(255,255,255,0.9)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(12,18,31,0.12)">
-      <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4}>
+    <Card borderRadius="xl" boxShadow="float" overflow="hidden" bg="rgba(255,255,255,0.01)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(255,255,255,0.1)">
+      <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4} bg="transparent">
         <Heading size="md" color="white">
           Leaderboard
         </Heading>
@@ -73,7 +73,7 @@ export default function Leaderboard({ players, currentPlayerId }: LeaderboardPro
               borderBottom={index < sortedPlayers.length - 1 ? '1px' : 'none'}
               borderColor="gray.200"
               transition="all 0.2s"
-              _hover={{ bg: 'rgba(91,141,239,0.08)' }}
+              //_hover={{ bg: 'rgba(91,141,239,0.08)' }}
             >
               <HStack
                 p={4}

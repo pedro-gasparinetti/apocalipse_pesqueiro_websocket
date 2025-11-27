@@ -161,9 +161,9 @@ const theme = Chakra.extendTheme({
         container: {
           bg: mode('paper.50', 'paper.900')(props),
           border: '1px solid',
-          borderColor: mode('rgba(12,18,31,0.08)', 'rgba(255,255,255,0.08)')(props),
+          borderColor: mode('rgba(12,18,31,0.12)', 'rgba(255,255,255,0.12)')(props),
           borderRadius: 'xl',
-          boxShadow: 'soft',
+          boxShadow: 'float',
         },
       }),
     },

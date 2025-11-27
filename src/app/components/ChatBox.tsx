@@ -75,8 +75,8 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
   })
 
   return (
-    <Card borderRadius="xl" boxShadow="float" overflow="hidden" h="100%" bg="rgba(255,255,255,0.9)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(12,18,31,0.12)">
-      <CardHeader bgGradient="linear(to-r, accent.500, accent.600)" py={3} px={4}>
+    <Card borderRadius="xl" boxShadow="float" overflow="hidden" h="100%" bg="rgba(255,255,255,0.01)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(255,255,255,0.1)">
+      <CardHeader bgGradient="linear(to-r, accent.500, accent.600)" py={3} px={4} bg="transparent">
         <Heading size="sm" color="white">
           Game Chat
         </Heading>
@@ -116,7 +116,7 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
                     boxShadow="soft"
                     border="1px solid rgba(12,18,31,0.08)"
                   >
-                    <Text fontSize="xs" fontWeight="600" color="accent.600" _dark={{ color: 'accent.200' }} mb={1}>
+                    <Text fontSize="xs" fontWeight="600" color="ink.500" _dark={{ color: 'accent.200' }} mb={1}>
                       {msg.playerName}
                     </Text>
                     <Text fontSize="sm" color="ink.800" _dark={{ color: 'paper.100' }}>

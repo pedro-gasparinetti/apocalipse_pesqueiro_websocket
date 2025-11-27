@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Box,
   Button,
@@ -29,13 +29,12 @@ import {
   Input,
   SimpleGrid,
 } from '@chakra-ui/react'
-import { FaInfoCircle, FaRedo, FaCog, FaChartBar, FaUsers } from 'react-icons/fa'
+import { FaInfoCircle, FaRedo, FaCog, FaChartBar } from 'react-icons/fa'
 import {
   insertCoin,
   isHost,
   myPlayer,
   onPlayerJoin,
-  PlayerProfile,
   PlayerState,
   RPC,
   useMultiplayerState,
@@ -45,18 +44,16 @@ import {
 import { GameState } from '../types/GameState'
 import { Rodada } from '../types/Rodada'
 import { Jogada } from '../types/Jogada'
-import { JOGADA_PENDENTE, PEIXES_CESTO, RESULTADO_JOGADA, ULTIMA_MENSAGEM } from '../types/Constants'
+import { JOGADA_PENDENTE, PEIXES_CESTO, RESULTADO_JOGADA } from '../types/Constants'
 import { distribuirPeixesProporcional } from '../service/Distribuicao'
 import InstructionsPanel from './InstructionsPanel'
 import LakeScene from './LakeScene'
-import Leaderboard from './Leaderboard'
 import GameChart from './GameChart'
 import PlayerSelector from './PlayerSelector'
 import GameStats from './GameStats'
-import ResultadoFinal from './ResultadoFinal'
 import ChatBox from './ChatBox'
+import Leaderboard from './Leaderboard'
 import RoundCompletionModal from './RoundCompletionModal'
-import { MENSAGEM_PENDENTE } from '../types/Constants'
 import { Table, Thead, Tbody, Tr, Th, Td, Tag, TagLabel } from '@chakra-ui/react'
 
 interface GameRoomProps {
@@ -259,16 +256,20 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
   const { isOpen: isConfigOpen, onToggle: onConfigToggle } = useDisclosure()
 
   const [gameState, setGameState] = useMultiplayerState('gameState', initialState)
+  const gameStateRef = useRef(gameState)
   const [quantidadePescada, setQuantidadePescada] = useState<number>(0)
   const [jogadorAFiscalizar, setJogadorAFiscalizar] = useState<string | null>(null)
   const [isAguardando, setIsAguardando] = useState(false)
   const [previousRoundCount, setPreviousRoundCount] = useState(0)
-  const mensagemRef = useRef<HTMLInputElement>(null)
   const shownJoinNotifications = useRef<Set<string>>(new Set())
 
   const jogadores = usePlayersList(true)
   const jogadasPendentes = usePlayersState(JOGADA_PENDENTE)
   const me = myPlayer()
+
+  useEffect(() => {
+    gameStateRef.current = gameState
+  }, [gameState])
 
   // Initialize game
   useEffect(() => {
@@ -339,9 +340,7 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
 
     RPC.register('mensagemEnviada', async (mensagem: any, caller: PlayerState) => {
       console.log('mensagemEnviada: ' + mensagem)
-      gameState.conteudoChat.push(`${caller?.getProfile().name}: ${mensagem}`)
-      caller.setState(ULTIMA_MENSAGEM, mensagem)
-      setGameState(gameState, true)
+      appendChatMessage(caller?.getProfile().name || 'Player', mensagem)
     })
 
     return () => {
@@ -578,7 +577,21 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
     }
   }
 
+  const appendChatMessage = (author: string, message: string) => {
+    const baseState = gameStateRef.current || gameState
+    const updatedState = {
+      ...baseState,
+      conteudoChat: [...(baseState?.conteudoChat || []), `${author}: ${message}`],
+    }
+    gameStateRef.current = updatedState
+    setGameState(updatedState, true)
+  }
+
   const handleSendMessage = (message: string) => {
+    const author = myPlayer()?.getProfile().name || 'Me'
+    if (!isHost()) {
+      appendChatMessage(author, message) // optimistic update for non-hosts
+    }
     RPC.call('mensagemEnviada', message, RPC.Mode.HOST)
   }
 
@@ -613,20 +626,12 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
   const currentRound = gameState.rodadas.length + 1
   const canInspect = quantidadePescada <= gameState.limiteSustentavel
 
-  const leaderboardPlayers = jogadores.map((j) => ({
-    id: j.id,
-    name: j.getProfile().name,
-    photo: j.getProfile().photo,
-    fishCount: j.getState(PEIXES_CESTO) || 0,
-  }))
-
   const otherPlayers = jogadores
     .filter((j) => j.id !== myPlayer()?.id)
     .map((j) => ({
       id: j.id,
       name: j.getProfile().name,
       photo: j.getProfile().photo,
-      message: j.getState(ULTIMA_MENSAGEM),
     }))
 
   if (!me?.id) {
@@ -737,8 +742,20 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
         />
 
           {isStatsOpen && (
-            <Card borderRadius="2xl" boxShadow="float" p={4}>
-              <GameChart rounds={gameState.rodadas} playerCount={jogadores.length} />
+            <Card
+              borderRadius="2xl"
+              overflow="hidden"
+              bg="paper.50"
+              _dark={{ bg: 'paper.50' }}
+              border="1px solid rgba(12,18,31,0.14)"
+              boxShadow="float"
+            >
+              <Box bg="accent.500" color="white" px={6} py={4}>
+                <Heading size="md">Game Statistics</Heading>
+              </Box>
+              <CardBody bg="white" px={{ base: 4, md: 6 }} py={5}>
+                <GameChart rounds={gameState.rodadas} playerCount={jogadores.length} />
+              </CardBody>
             </Card>
           )}
 
@@ -797,11 +814,20 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
 
           {/* Main Game Area */}
           {!gameState.jogoFinalizado ? (
-            <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={8}>
-              <GridItem>
-                <VStack spacing={6} align="stretch">
+            <>
+              <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={8} alignItems="stretch">
+                <GridItem>
                   {/* Fishing Control */}
-                  <Card borderRadius="xl" boxShadow="float" bg="rgba(255,255,255,0.01)" _dark={{ bg: 'rgba(14,18,28,0.95)' }} border="1px solid rgba(255,255,255,0.1)">
+                  <Card
+                    borderRadius="xl"
+                    boxShadow="float"
+                    bg="rgba(255,255,255,0.01)"
+                    _dark={{ bg: 'rgba(14,18,28,0.95)' }}
+                    border="1px solid rgba(255,255,255,0.1)"
+                    h="100%"
+                    display="flex"
+                    flexDirection="column"
+                  >
                     <Box bgGradient="linear(to-r, accent.500, accent.600)" px={6} py={4} color="white" bg="transparent">
                       <Heading size="md">Your Fishing Decision</Heading>
                     </Box>
@@ -882,24 +908,32 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
                       </VStack>
                     </CardBody>
                   </Card>
+                </GridItem>
 
-                  {/* Player Selection */}
+                <GridItem>
                   <PlayerSelector
                     players={otherPlayers}
                     selectedPlayerId={jogadorAFiscalizar}
                     onSelectPlayer={handlePlayerClick}
                     canInspect={canInspect}
                   />
-                </VStack>
-              </GridItem>
+                </GridItem>
+              </Grid>
 
-              <GridItem>
-                <VStack spacing={6} align="stretch">
-                  <Leaderboard players={leaderboardPlayers} currentPlayerId={me?.id} />
+              <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={8}>
+                <GridItem>
+                  <Leaderboard players={jogadores.map((j) => ({
+                    id: j.id,
+                    name: j.getProfile().name,
+                    photo: j.getProfile().photo,
+                    fishCount: j.getState(PEIXES_CESTO) || 0,
+                  }))} currentPlayerId={me?.id} />
+                </GridItem>
+                <GridItem>
                   <ChatBox messages={gameState.conteudoChat} players={jogadores} onSendMessage={handleSendMessage} />
-                </VStack>
-              </GridItem>
-            </Grid>
+                </GridItem>
+              </Grid>
+            </>
           ) : (
             <RoundSummaryTable
               gameState={gameState}

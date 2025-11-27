@@ -120,12 +120,12 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
                     />
                     <Box
                       flex="1"
-                      bg={isMine ? 'rgba(91,141,239,0.12)' : 'rgba(255,255,255,0.95)'}
-                      _dark={{ bg: isMine ? 'rgba(91,141,239,0.16)' : 'rgba(20,24,32,0.9)' }}
+                      bg={isMine ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.95)'}
+                      _dark={{ bg: isMine ? 'rgba(255,255,255,0.08)' : 'rgba(20,24,32,0.9)' }}
                       borderRadius="lg"
                       p={3}
                       boxShadow="soft"
-                      border={isMine ? '1px solid rgba(91,141,239,0.35)' : '1px solid rgba(12,18,31,0.08)'}
+                      border={isMine ? '1px solid rgba(12,18,31,0.1)' : '1px solid rgba(12,18,31,0.08)'}
                     >
                       <Text
                         fontSize="xs"

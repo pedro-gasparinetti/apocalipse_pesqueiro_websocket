@@ -755,10 +755,16 @@ export default function GameRoom({ fullScreenLake = false }: GameRoomProps) {
           )}
 
           {isConfigOpen && (
-            <Card borderRadius="2xl" boxShadow="float">
-              <CardBody>
+            <Card
+              borderRadius="2xl"
+              boxShadow="float"
+              bg="rgba(255,255,255,0.01)"
+              _dark={{ bg: 'rgba(14,18,28,0.95)' }}
+              border="1px solid rgba(255,255,255,0.1)"
+            >
+              <CardBody color="ink.100">
                 <HStack justify="space-between" mb={4}>
-                  <Heading size="md">Game Parameters</Heading>
+                  <Heading size="md" color="ink.100">Game Parameters</Heading>
                   {!isHost() && <Badge colorScheme="blue">Read only</Badge>}
                 </HStack>
                 <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>

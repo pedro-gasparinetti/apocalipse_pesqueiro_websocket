@@ -49,10 +49,10 @@ export default function LakeScene({
   fishTrailLength = 16,
   boatSize = 30,
   boatWakeColor = 0xffffff,
-  boatWakeMaxAlpha = 0.05,
-  boatWakeLengthFactor = 1.8,
+  boatWakeMaxAlpha = 0.01,
+  boatWakeLengthFactor = 1.9,
   boatWakeThicknessFactor = 0.05,
-  boatWakeHistory = 80,
+  boatWakeHistory = 300,
   surface = { enabled: true, opacity: 0.06, tint: 0xffffff },
   fullScreen = false,
 }: LakeSceneProps) {

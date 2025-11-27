@@ -27,7 +27,7 @@ interface LakeSceneProps {
 }
 
 type Fish = { sprite: Graphics; vx: number; vy: number; history: { x: number; y: number }[] }
-type Boat = { graphic: Graphics; vx: number; phase: number }
+type Boat = { graphic: Graphics; vx: number; vy: number; phase: number }
 
 export default function LakeScene({
   fishCount,
@@ -95,11 +95,18 @@ export default function LakeScene({
       const surfaceLayer = new Graphics()
       const boatsLayer = new Container()
 
+      app.stage.sortableChildren = true
+
       // layering: lake (bg) -> fish + trails -> surface effects -> boats (top)
+      lakeLayer.zIndex = 0
+      trailLayer.zIndex = 1
+      fishLayer.zIndex = 2
+      surfaceLayer.zIndex = 3 // between fish and boats
+      boatsLayer.zIndex = 4
       app.stage.addChild(lakeLayer)
       app.stage.addChild(trailLayer)
       app.stage.addChild(fishLayer)
-      app.stage.addChild(surfaceLayer) // between fish and boats
+      app.stage.addChild(surfaceLayer)
       app.stage.addChild(boatsLayer)
 
       const accent = 0x5b8def
@@ -124,10 +131,19 @@ export default function LakeScene({
         g.rect(-size / 2, -size / 2, size, size)
         g.fill({ color: boatPalette[index % boatPalette.length], alpha: 0.95 })
         g.stroke({ color: 0xffffff, alpha: 0.12, width: 1 })
-        g.x = (index + 1) * 140
-        g.y = app.renderer.height * 0.22 + Math.sin(index) * 12
+        const { width, height } = app.renderer
+        const margin = size
+        g.x = margin + Math.random() * Math.max(1, width - margin * 2)
+        g.y = margin + Math.random() * Math.max(1, height - margin * 2)
         boatsLayer.addChild(g)
-        boats.push({ graphic: g, vx: (Math.random() * 0.4 + 0.25) * speedFactor, phase: Math.random() * Math.PI })
+        const speed = (Math.random() * 0.4 + 0.25) * speedFactor
+        const angle = Math.random() * Math.PI * 2
+        boats.push({
+          graphic: g,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          phase: Math.random() * Math.PI,
+        })
       }
 
       const createFish = () => {
@@ -138,7 +154,7 @@ export default function LakeScene({
         s.stroke({ color: accent, alpha: 0.65, width: 1 })
         const { width, height } = app.renderer
         s.x = Math.random() * width
-        s.y = height * 0.42 + Math.random() * height * 0.45
+        s.y = Math.random() * height
         fishLayer.addChild(s)
         return {
           sprite: s,
@@ -176,11 +192,28 @@ export default function LakeScene({
           boat?.graphic.destroy()
         }
         boats.forEach((boat, idx) => {
-          boat.phase += 0.008 * delta.deltaTime
+          boat.phase += 0.012 * delta.deltaTime
           boat.graphic.x += boat.vx * delta.deltaTime
-          boat.graphic.y = height * 0.22 + Math.sin(frame * 0.012 + idx) * 10
+          boat.graphic.y += boat.vy * delta.deltaTime + Math.sin(boat.phase) * 0.15
           boat.graphic.rotation = Math.sin(frame * 0.004 + idx) * 0.02
-          if (boat.graphic.x > width - 40 || boat.graphic.x < 40) boat.vx *= -1
+
+          const margin = boatSize * 0.6
+          if (boat.graphic.x > width - margin) {
+            boat.graphic.x = width - margin
+            boat.vx *= -1
+          }
+          if (boat.graphic.x < margin) {
+            boat.graphic.x = margin
+            boat.vx *= -1
+          }
+          if (boat.graphic.y > height - margin) {
+            boat.graphic.y = height - margin
+            boat.vy *= -1
+          }
+          if (boat.graphic.y < margin) {
+            boat.graphic.y = margin
+            boat.vy *= -1
+          }
         })
 
         // Fish population control
@@ -203,19 +236,11 @@ export default function LakeScene({
           fish.sprite.x += fish.vx * delta.deltaTime
           fish.sprite.y += fish.vy * delta.deltaTime
 
-          if (fish.sprite.x > width + 10) fish.sprite.x = -10
-          if (fish.sprite.x < -10) fish.sprite.x = width + 10
-
-          const minY = height * 0.32
-          const maxY = height * 0.92
-          if (fish.sprite.y > maxY) {
-            fish.sprite.y = maxY
-            fish.vy *= -0.6
-          }
-          if (fish.sprite.y < minY) {
-            fish.sprite.y = minY
-            fish.vy *= -0.6
-          }
+          const wrapMargin = 10
+          if (fish.sprite.x > width + wrapMargin) fish.sprite.x = -wrapMargin
+          if (fish.sprite.x < -wrapMargin) fish.sprite.x = width + wrapMargin
+          if (fish.sprite.y > height + wrapMargin) fish.sprite.y = -wrapMargin
+          if (fish.sprite.y < -wrapMargin) fish.sprite.y = height + wrapMargin
 
           fish.history.unshift({ x: fish.sprite.x, y: fish.sprite.y })
           fish.history = fish.history.slice(0, fishTrailLength)

@@ -120,24 +120,24 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
                     />
                     <Box
                       flex="1"
-                      bg={isMine ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.95)'}
-                      _dark={{ bg: isMine ? 'rgba(255,255,255,0.08)' : 'rgba(20,24,32,0.9)' }}
+                      bg={isMine ? 'rgba(91,141,239,0.14)' : 'rgba(255,255,255,0.06)'}
+                      _dark={{ bg: isMine ? 'rgba(91,141,239,0.16)' : 'rgba(255,255,255,0.06)' }}
                       borderRadius="lg"
                       p={3}
                       boxShadow="soft"
-                      border={isMine ? '1px solid rgba(12,18,31,0.1)' : '1px solid rgba(12,18,31,0.08)'}
+                      border={isMine ? '1px solid rgba(91,141,239,0.35)' : '1px solid rgba(255,255,255,0.1)'}
                     >
                       <Text
                         fontSize="xs"
                         fontWeight="600"
-                        color={isMine ? 'accent.600' : 'ink.500'}
-                        _dark={{ color: isMine ? 'accent.200' : 'accent.200' }}
+                        color={isMine ? 'accent.200' : 'paper.100'}
+                        _dark={{ color: isMine ? 'accent.200' : 'paper.100' }}
                         mb={1}
                         textAlign="left"
                       >
                         {msg.playerName}
                       </Text>
-                      <Text fontSize="sm" color="ink.800" _dark={{ color: 'paper.100' }} textAlign="left">
+                      <Text fontSize="sm" color="paper.50" _dark={{ color: 'paper.100' }} textAlign="left">
                         {msg.message}
                       </Text>
                     </Box>
@@ -152,20 +152,28 @@ export default function ChatBox({ messages, players, onSendMessage }: ChatBoxPro
         <Divider />
 
         {/* Input Area */}
-        <HStack p={4} bg="rgba(255,255,255,0.95)" _dark={{ bg: 'rgba(20,24,32,0.9)' }} spacing={2}>
+        <HStack
+          p={4}
+          spacing={2}
+          bg="rgba(255,255,255,0.04)"
+          _dark={{ bg: 'rgba(255,255,255,0.03)' }}
+          border="1px solid rgba(255,255,255,0.1)"
+          borderRadius="xl"
+          boxShadow="soft"
+        >
           <Input
             ref={inputRef}
             placeholder="Type your message..."
             onKeyPress={handleKeyPress}
             borderRadius="lg"
-            bg="rgba(12,18,31,0.04)"
-            _dark={{ bg: 'rgba(255,255,255,0.06)' }}
-            border="1px solid rgba(12,18,31,0.12)"
+            bg="rgba(255,255,255,0.06)"
+            _dark={{ bg: 'rgba(255,255,255,0.08)' }}
+            border="1px solid rgba(255,255,255,0.12)"
             _hover={{ borderColor: 'accent.300' }}
             _focus={{
               borderColor: 'accent.400',
               boxShadow: '0 0 0 1px var(--chakra-colors-accent-400)',
-              bg: 'white',
+              bg: 'rgba(255,255,255,0.12)',
             }}
           />
           <IconButton

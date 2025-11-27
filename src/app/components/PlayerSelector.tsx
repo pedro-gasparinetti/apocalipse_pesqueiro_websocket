@@ -89,8 +89,9 @@ export default function PlayerSelector({
                   p={3}
                   borderRadius="lg"
                   border="1px solid"
-                  borderColor={isSelected ? 'accent.400' : 'rgba(12,18,31,0.12)'}
-                  bg={isSelected ? 'rgba(91,141,239,0.08)' : 'rgba(255,255,255,0.9)'}
+                  borderColor={isSelected ? 'accent.400' : 'rgba(255,255,255,0.1)'}
+                  bg={isSelected ? 'rgba(91,141,239,0.14)' : 'rgba(255,255,255,0.05)'}
+                  boxShadow="soft"
                   cursor={canInspect ? 'pointer' : 'not-allowed'}
                   opacity={canInspect ? 1 : 0.6}
                   transition="all 0.2s"

@@ -99,14 +99,31 @@ io.on('connection', (socket) => {
       if (player) {
         const room = gameRooms.get(player.roomId);
         if (room) {
-          const roomPlayer = room.players.get(socket.id);
-          if (roomPlayer) {
-            roomPlayer.state = { ...roomPlayer.state, ...data };
-            
-            socket.to(player.roomId).emit('player-state-updated', {
-              playerId: socket.id,
-              state: data
-            });
+          // Check if it's a host update for another player
+          if (data.playerId && data.playerId !== socket.id && socket.id === room.host) {
+             const targetPlayer = room.players.get(data.playerId);
+             if (targetPlayer) {
+               targetPlayer.state = { ...targetPlayer.state, ...data.state };
+               
+               // Broadcast to all (including target)
+               io.to(player.roomId).emit('player-state-updated', {
+                 playerId: data.playerId,
+                 state: data.state
+               });
+             }
+          } else {
+            // Normal self-update
+            const roomPlayer = room.players.get(socket.id);
+            if (roomPlayer) {
+              // Handle both formats: { key: value } or { state: { key: value } }
+              const updateData = data.state || data;
+              roomPlayer.state = { ...roomPlayer.state, ...updateData };
+              
+              socket.to(player.roomId).emit('player-state-updated', {
+                playerId: socket.id,
+                state: updateData
+              });
+            }
           }
         }
       }

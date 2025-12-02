@@ -716,6 +716,7 @@ export default function GameRoom() {
                       jogada.roubou && jogada.fiscalizadoPor && jogada.fiscalizadoPor.length > 0 
                         ? '0.0 (Fiscalizado)'
                         : (() => {
+                            if (!rodada) return '-';
                             const limitePeixesPossiveis = rodada.quantidadeLagoInicial || 0;
                             const distribuicao = distribuirPeixesProporcional(
                               rodada.jogadas.map(j => ({ idJogador: j.idJogador, quantidadePescada: j.quantidadePescada })),

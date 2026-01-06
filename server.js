@@ -113,16 +113,16 @@ io.on('connection', (socket) => {
              }
           } else {
             // Normal self-update
-            const roomPlayer = room.players.get(socket.id);
-            if (roomPlayer) {
+          const roomPlayer = room.players.get(socket.id);
+          if (roomPlayer) {
               // Handle both formats: { key: value } or { state: { key: value } }
               const updateData = data.state || data;
               roomPlayer.state = { ...roomPlayer.state, ...updateData };
-              
-              socket.to(player.roomId).emit('player-state-updated', {
-                playerId: socket.id,
+            
+            socket.to(player.roomId).emit('player-state-updated', {
+              playerId: socket.id,
                 state: updateData
-              });
+            });
             }
           }
         }

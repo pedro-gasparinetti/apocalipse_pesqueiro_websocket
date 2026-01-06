@@ -70,7 +70,7 @@ function createPlayerState(playerData: any): PlayerState {
       if (socket) {
         // If updating self
         if (playerState.id === currentPlayer?.id) {
-           socket.emit('update-player-state', { [key]: value });
+        socket.emit('update-player-state', { [key]: value });
            
            // Trigger callbacks for own state updates
            playersUpdateCallbacks.forEach(callback => {

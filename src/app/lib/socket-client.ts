@@ -259,6 +259,14 @@ export function onPlayerJoin(callback: (player: PlayerState) => void): void {
   playerJoinCallbacks.push(callback);
 }
 
+// Trigger server-side round processing (Host only)
+export function processRound(): void {
+  if (socket && isHostPlayer) {
+    console.log('[GAME-LOGIC] Requesting server to process round');
+    socket.emit('process-round');
+  }
+}
+
 // Hook for multiplayer state (replaces useMultiplayerState)
 export function useMultiplayerState<T>(key: string, initialValue: T): [T, (value: T, reliable?: boolean) => void] {
   const [state, setState] = useState<T>(gameState[key] ?? initialValue);

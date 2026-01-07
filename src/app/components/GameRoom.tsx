@@ -1,5 +1,5 @@
 
-import { insertCoin, isHost, myPlayer, onPlayerJoin, PlayerProfile, PlayerState, RPC, useMultiplayerState, usePlayersList, usePlayersState } from '../lib/socket-client';
+import { insertCoin, isHost, myPlayer, onPlayerJoin, PlayerProfile, PlayerState, RPC, useMultiplayerState, usePlayersList, usePlayersState, processRound } from '../lib/socket-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Jogador from './Jogador';
 import Tabela from './Tabela';
@@ -138,178 +138,15 @@ export default function GameRoom() {
       console.log('[DEBUG] Total jogadas pendentes:', jogadasPendentes.length);
       console.log('[DEBUG] Jogadas não realizadas:', jogadasNaoRealizadas.length);
       console.log('[DEBUG] Total jogadores:', jogadores.length);
-      console.log('[DEBUG] jogadasPendentes:', jogadasPendentes.map(j => ({ 
-        player: j.player.getProfile().name, 
-        state: j.state 
-      })));
       
-      const novoGameState = { ...gameState };
+      // If all players have played, trigger the server to process the round
       if (jogadasPendentes.length > 0 && jogadasNaoRealizadas.length == 0 && jogadasPendentes.length == jogadores.length) {
-        console.log('[DEBUG] Todas jogadas realizadas - processando rodada');
-        console.log('[DEBUG] Esperamos', jogadores.length, 'jogadas, temos', jogadasPendentes.length);
-        const rodadaAtual: Rodada = {
-          numero: gameState.rodadas.length + 1,
-          quantidadeLagoInicial: gameState.quantidadePeixesLago,
-          jogadas: [],
-          crescimentoLago: gameState.quantidadePeixesLago * gameState.taxaCrescimento
-        }
-
-        //calcula a quantidade total de peixes pescados por todos os jogadores
-        //const somaPeixesPescados = jogadasPendentes.reduce((acumulador, jogada) => acumulador + jogada.state.quantidadePescada, 0);
-
-        //recupera os jogadores que fiscalizaram cada jogador
-        //agrupando por jogador fiscalizado
-        //Exemplo: { 'idJogadorFiscalizado': [jogador1, jogador2], 'idJogadorFiscalizado2': [jogador3] }
-        const jogadoresFiscalizados = jogadasPendentes.reduce((acc: Record<string, PlayerState[]>, jogada) => {
-          const jogadorAFiscalizar = jogada.state.jogadorAFiscalizar;
-
-          acc[jogadorAFiscalizar] = acc[jogadorAFiscalizar] || [];
-          acc[jogadorAFiscalizar].push(jogada.player);
-
-          return acc;
-        }, {} as Record<string, PlayerState[]>);
-        //console.log(`jogadoresFiscalizados`)
-        //console.dir(jogadoresFiscalizados)
-
-        //calcula o limite de peixes possiveis por jogador de acordo com a quantidade de peixes no lago
-        //const limitePeixesPossiveis = (somaPeixesPescados > gameState.quantidadePeixesLago) ?
-        //  Math.floor(gameState.quantidadePeixesLago / jogadores.length) :
-        //  gameState.quantidadePeixesLago;
-        //{ idJogador: jogada.player.id, quantidadePescada: jogada.state.quantidadePescada }
-        const limitePeixesPossiveis = distribuirPeixesProporcional(jogadasPendentes.map((jogada) => {
-          return { idJogador: jogada.player.id, quantidadePescada: jogada.state.quantidadePescada }
-        }), rodadaAtual.quantidadeLagoInicial);
-
-
-        console.log('limitePeixesPossiveis');
-        console.dir(limitePeixesPossiveis);
-        let somaPeixesNosCestos = 0;
-        let somaBancaNaRodada = 0;
-        jogadasPendentes.forEach((jogadaPendente) => {
-
-          const jogada: Jogada = {
-            idJogador: jogadaPendente.player.id,
-            quantidadePescada: jogadaPendente.state.quantidadePescada,
-            jogadorAFiscalizar: jogadaPendente.state.jogadorAFiscalizar,
-            quantidadeAcumulada: 0,
-            fiscalizadoPor: [],
-            roubou: false,
-            multa: 0,
-            rateioGanhado: 0,
-            rateioPerdido: 0
-          }
-
-          //recupera peixes no cesto do jogador
-          const peixesCesto = jogadaPendente.player.getState(PEIXES_CESTO);
-
-          //verifica se jogador pesca mais que o limite possivel ou quantidade existente no lago
-          //let peixesPescadosJogador = (jogadaPendente.state.quantidadePescada > limitePeixesPossiveis) ? limitePeixesPossiveis : jogadaPendente.state.quantidadePescada;
-          let peixesPescadosJogador = limitePeixesPossiveis[jogadaPendente.player.id];
-
-          //verifica se jogador fiscalizou alguem e desconta o custo da fiscalizacao
-          peixesPescadosJogador -= jogadaPendente.state.jogadorAFiscalizar ? gameState.custoFiscalizacao : 0;
-
-          //verifica se jogador roubou e está sendo fiscalizado
-          jogada.roubou = peixesPescadosJogador > gameState.limiteSustentavel;
-          jogada.fiscalizadoPor = jogadoresFiscalizados[jogadaPendente.player.id]?.map((fiscalizador: PlayerState) => {
-            return fiscalizador.getProfile();
-          })
-
-          if (jogada.roubou && jogada.fiscalizadoPor?.length > 0) {
-            console.log('Jogador ' + jogadaPendente.player.getProfile().name + ' foi fiscalizado');
-            jogada.multa = 0.1 * peixesPescadosJogador;
-            jogada.rateioPerdido = 0.9 * peixesPescadosJogador / jogadoresFiscalizados[jogadaPendente.player.id].length;
-
-            let resultadoJogadaJogador = jogadaPendente.player.getState(RESULTADO_JOGADA) || {};
-
-            //resultadoJogadaJogador.mensagem = 'Você foi fiscalizado e perdeu os peixes dessa rodada!';
-            resultadoJogadaJogador.fiscalizadores = jogada.fiscalizadoPor;
-            resultadoJogadaJogador.crescimentoLago = rodadaAtual.crescimentoLago;
-
-            resultadoJogadaJogador.roubou = true;
-
-            jogadaPendente.player.setState(RESULTADO_JOGADA, resultadoJogadaJogador, true);
-            console.log('[DEBUG] Resultado definido para jogador fiscalizado', jogadaPendente.player.getProfile().name, ':', resultadoJogadaJogador);
-
-            //rateia peixes entre os jogadores que fiscalizaram
-            jogadoresFiscalizados[jogadaPendente.player.id].forEach((fiscalizador) => {
-              //recupera peixes no cesto do fiscalizador e incrementa com o rateio perdido pelo fiscalizado
-              const peixesCestoFiscalizador = fiscalizador.getState(PEIXES_CESTO);
-              console.log('peixesCestoFiscalizador: ' + peixesCestoFiscalizador);
-              console.log('rateioGanhado: ' + jogada.rateioPerdido);
-              fiscalizador.setState(PEIXES_CESTO, peixesCestoFiscalizador + jogada.rateioPerdido, true);
-              console.log('peixesCestoFiscalizador + rateio: ' + peixesCestoFiscalizador + jogada.rateioPerdido);
-
-              //Verifica se fiscalizador ja possui um resultado de jogada
-              let resultadoJogadaFiscalizador = fiscalizador.getState(RESULTADO_JOGADA) || {};
-              resultadoJogadaFiscalizador.rateioGanhado = jogada.rateioPerdido;
-              fiscalizador.setState(RESULTADO_JOGADA, resultadoJogadaFiscalizador, true);
-              //inclui o rateio na soma total de peixes nos cestos de todos os jogadores
-              somaPeixesNosCestos += jogada.rateioPerdido;
-            });
-
-            //incrementa a banca com a multa
-            novoGameState.quantidadeBanca += jogada.multa;
-            somaBancaNaRodada += jogada.multa;
-
-          } else {
-
-            //caso nao tenha sido fiscalizado atribui peixes ao jogador
-            jogada.quantidadeAcumulada = peixesCesto + peixesPescadosJogador;
-            jogadaPendente.player.setState(PEIXES_CESTO, jogada.quantidadeAcumulada, true);
-
-            let resultadoJogadaJogador = jogadaPendente.player.getState(RESULTADO_JOGADA) || {};
-
-            //resultadoJogadaJogador.mensagem = 'Você acumulou ' + peixesPescadosJogador + ' peixes nessa rodada!';
-            resultadoJogadaJogador.fiscalizadores = jogada.fiscalizadoPor;
-            resultadoJogadaJogador.peixesPescadosJogador = peixesPescadosJogador;
-
-            //TODO: agrupar os valores referentes ao resultado da rodada que estao na jogada e colocar no resultado da rodada
-            resultadoJogadaJogador.crescimentoLago = rodadaAtual.crescimentoLago;
-
-            jogadaPendente.player.setState(RESULTADO_JOGADA, resultadoJogadaJogador, true);
-            console.log('[DEBUG] Resultado definido para jogador normal', jogadaPendente.player.getProfile().name, ':', resultadoJogadaJogador);
-
-            //incrementa a banca com o custo da fiscalizacao
-            novoGameState.quantidadeBanca += jogadaPendente.state.jogadorAFiscalizar ? gameState.custoFiscalizacao : 0;
-            somaBancaNaRodada += jogadaPendente.state.jogadorAFiscalizar ? gameState.custoFiscalizacao : 0;
-            somaPeixesNosCestos += peixesPescadosJogador;
-          }
-          jogadaPendente.player.setState(JOGADA_PENDENTE, null, true);
-
-          //inclui a jogada na rodada atual
-          rodadaAtual.jogadas.push(jogada);
-        });
-
-        rodadaAtual.quantidadeNosCestos = somaPeixesNosCestos;
-        rodadaAtual.quantidadeLagoFinal = gameState.quantidadePeixesLago
-          - somaPeixesNosCestos
-          - somaBancaNaRodada
-          + rodadaAtual.crescimentoLago;
-
-        rodadaAtual.saldoBanca = somaBancaNaRodada;
-
-        novoGameState.quantidadePeixesLago = rodadaAtual.quantidadeLagoFinal;
-
-
-
-
-        //atualiza o game state com a rodada atual
-        novoGameState.rodadas.push(rodadaAtual);
-        novoGameState.jogoFinalizado = (rodadaAtual.numero == gameState.limiteRodadas) || rodadaAtual.quantidadeLagoFinal < 1;
-        
-        //processamento das mensagens pendentes
-        /*console.log('mensagensPendentes:', mensagensPendentes.length);                      
-        mensagensPendentes.forEach((mensagemPendente) => {
-          novoGameState.conteudoChat += `${mensagemPendente.player.getProfile().name}: ${mensagemPendente.mensagem} \n`;
-          mensagemPendente.player.setState(MENSAGEM_PENDENTE, null, true);
-        });*/
-
-        setGameState(novoGameState, true);
+        console.log('[DEBUG] Todas jogadas realizadas - solicitando processamento ao servidor');
+        processRound();
       }
     }
 
-  }, [gameState, jogadasPendentes, jogadores, mensagensPendentes, setGameState]);
+  }, [gameState, jogadasPendentes, jogadores, mensagensPendentes]);
 
   function handleJogadorClick(id: string) {
     console.log('jogadorAFiscalizar !== nome ' + jogadorAFiscalizar !== id);

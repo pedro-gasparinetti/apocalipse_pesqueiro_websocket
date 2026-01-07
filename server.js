@@ -1,5 +1,6 @@
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const { processRound } = require('./src/server/game-logic');
 
 const port = process.env.SOCKET_PORT || 3001;
 
@@ -197,7 +198,24 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle player disconnection
+    // Handle process-round event (Host triggers this)
+    socket.on('process-round', () => {
+      console.log('[GAME-LOGIC] Processing round request from:', socket.id);
+      
+      try {
+        const player = players.get(socket.id);
+        if (player) {
+          const room = gameRooms.get(player.roomId);
+          if (room && socket.id === room.host) {
+            processRound(room, io);
+          }
+        }
+      } catch (error) {
+        console.error('[GAME-LOGIC] Error processing round:', error);
+      }
+    });
+
+    // Handle player disconnection
   socket.on('disconnect', () => {
     console.log('[DISCONNECT] User disconnected:', socket.id);
     

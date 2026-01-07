@@ -2,6 +2,8 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const next = require('next');
 
+const { processRound } = require('./src/server/game-logic');
+
 // Set environment variables to avoid permission issues
 process.env.NEXT_TELEMETRY_DISABLED = '1';
 process.env.NEXT_PRIVATE_SKIP_VALIDATION = '1';
@@ -226,6 +228,23 @@ app.prepare().then(() => {
         }
       } catch (error) {
         console.error('[RPC] Error handling RPC call:', error);
+      }
+    });
+
+    // Handle process-round event (Host triggers this)
+    socket.on('process-round', () => {
+      console.log('[GAME-LOGIC] Processing round request from:', socket.id);
+      
+      try {
+        const player = players.get(socket.id);
+        if (player) {
+          const room = gameRooms.get(player.roomId);
+          if (room && socket.id === room.host) {
+            processRound(room, io);
+          }
+        }
+      } catch (error) {
+        console.error('[GAME-LOGIC] Error processing round:', error);
       }
     });
 

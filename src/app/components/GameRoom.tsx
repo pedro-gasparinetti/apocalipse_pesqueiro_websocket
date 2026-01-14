@@ -597,7 +597,7 @@ export default function GameRoom() {
               <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
               <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
               <td className="border border-gray-300 px-2 py-2 text-center text-sm">
-                {myPlayer()?.getState(PEIXES_CESTO)?.toFixed(1) || '0.0'}
+                {jogadores.find(j => j.id === myPlayer()?.id)?.getState(PEIXES_CESTO)?.toFixed(1) || '0.0'}
               </td>
               <td className="border border-gray-300 px-2 py-2 text-center text-sm">
                 {gameState.rodadas.filter(r => {

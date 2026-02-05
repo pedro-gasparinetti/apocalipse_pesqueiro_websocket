@@ -13,7 +13,12 @@ console.log('[SOCKET-SERVER] Starting Socket.IO server...');
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: [
+      "http://localhost:3000", 
+      "http://localhost:3001",
+      "https://prosperitylake.club",
+      "https://www.prosperitylake.club"
+    ],
     methods: ["GET", "POST"],
     credentials: true
   }

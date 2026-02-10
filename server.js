@@ -1,6 +1,17 @@
+require('dotenv').config();
+
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const { processRound } = require('./src/server/game-logic');
+
+// Tenta importar database mas não falha se não estiver disponível
+let testConnection = null;
+try {
+  const db = require('./src/server/database');
+  testConnection = db.testConnection;
+} catch (error) {
+  console.log('[SOCKET-SERVER] Database module not available');
+}
 
 const port = process.env.SOCKET_PORT || 3001;
 
@@ -265,7 +276,26 @@ httpServer
     console.error('[ERROR] Socket server error:', err);
     process.exit(1);
   })
-  .listen(port, () => {
+  .listen(port, async () => {
     console.log(`[SOCKET-SERVER] Ready on http://localhost:${port}`);
     console.log('[SOCKET-SERVER] Waiting for connections...');
+    
+    // Test database connection if available
+    if (testConnection) {
+      console.log('[SOCKET-SERVER] Testing database connection...');
+      const dbConnected = await testConnection();
+      
+      if (dbConnected) {
+        console.log('[SOCKET-SERVER] ✓ Database connection successful');
+        console.log('[SOCKET-SERVER] Game results will be automatically saved');
+      } else {
+        console.log('[SOCKET-SERVER] ✗ Database connection failed');
+        console.log('[SOCKET-SERVER] Games will run but results will NOT be saved');
+        console.log('[SOCKET-SERVER] Check your PostgreSQL configuration in .env file');
+      }
+    } else {
+      console.log('[SOCKET-SERVER] ⚠ Database module not configured');
+      console.log('[SOCKET-SERVER] Games will run normally but results will NOT be saved');
+      console.log('[SOCKET-SERVER] To enable database: follow instructions in DATABASE_SETUP.md');
+    }
   });

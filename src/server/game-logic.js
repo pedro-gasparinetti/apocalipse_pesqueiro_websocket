@@ -1,3 +1,12 @@
+// Importação condicional do repositório (pode não estar disponível sem DB)
+let saveGameComplete = null;
+try {
+  const repo = require('./game-repository');
+  saveGameComplete = repo.saveGameComplete;
+} catch (error) {
+  console.log('[GAME-LOGIC] Database module not available, games will not be saved');
+}
+
 // Helper function for fish distribution
 const distribuirPeixesProporcional = (jogadas, totalPeixesDisponiveis) => {
   const resultado = {};
@@ -206,6 +215,39 @@ function processRound(room, io) {
         state: p.state
       });
     });
+
+    // 3. Save game to database if finished
+    if (gameState.jogoFinalizado) {
+      console.log('[GAME-LOGIC] Game finished!');
+      
+      if (saveGameComplete) {
+        console.log('[GAME-LOGIC] Saving to database...');
+        
+        saveGameComplete(gameState, room)
+          .then(gameId => {
+            console.log('[GAME-LOGIC] Game successfully saved to database with ID:', gameId);
+            
+            // Opcional: notificar clientes que o jogo foi salvo
+            io.to(room.id).emit('game-saved', {
+              success: true,
+              gameId: gameId,
+              message: 'Jogo salvo com sucesso no banco de dados!'
+            });
+          })
+          .catch(error => {
+            console.error('[GAME-LOGIC] Failed to save game to database:', error);
+            
+            // Notificar clientes do erro
+            io.to(room.id).emit('game-saved', {
+              success: false,
+              error: error.message,
+              message: 'Erro ao salvar jogo no banco de dados'
+            });
+          });
+      } else {
+        console.log('[GAME-LOGIC] Database not configured. Game results not saved.');
+      }
+    }
 
   } else {
     console.log('[GAME-LOGIC] Cannot process round. Waiting for moves:', roomPlayers.length - jogadasPendentes.length);

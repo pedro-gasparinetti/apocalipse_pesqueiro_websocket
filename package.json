@@ -10,16 +10,22 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "clean": "rmdir /s /q .next 2>nul || echo \"Clean completed\""
+    "clean": "rmdir /s /q .next 2>nul || echo \"Clean completed\"",
+    "db:setup": "node db/setup-database.js",
+    "db:test": "node -e \"require('./src/server/database').testConnection()\"",
+    "db:query": "node db/query-examples.js"
   },
   "dependencies": {
+    "@types/pg": "^8.16.0",
+    "concurrently": "^8.2.2",
+    "dotenv": "^17.2.4",
     "next": "^14.2.18",
-    "socket.io": "^4.7.5",
-    "socket.io-client": "^4.7.5",
+    "pg": "^8.18.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.13.3",
-    "concurrently": "^8.2.2"
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

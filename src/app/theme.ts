@@ -1,7 +1,7 @@
 'use client'
 
 import * as Chakra from '@chakra-ui/react'
-import { mode } from '@chakra-ui/theme-tools'
+import { mode, type StyleFunctionProps } from '@chakra-ui/theme-tools'
 
 const config: Chakra.ThemeConfig = {
   initialColorMode: 'light',
@@ -97,7 +97,7 @@ const theme = Chakra.extendTheme({
     },
   },
   styles: {
-    global: (props) => ({
+    global: (props: StyleFunctionProps) => ({
       body: {
         bg: mode('#F7F8FB', '#0C1018')(props),
         color: mode('#0F172A', '#E6E9F2')(props),
@@ -125,7 +125,7 @@ const theme = Chakra.extendTheme({
         transition: 'all 0.18s ease',
       },
       variants: {
-        primary: (props: any) => ({
+        primary: (props: StyleFunctionProps) => ({
           bg: mode('accent.500', 'accent.400')(props),
           color: 'white',
           boxShadow: 'soft',
@@ -133,7 +133,7 @@ const theme = Chakra.extendTheme({
           _active: { transform: 'translateY(0)', boxShadow: 'soft' },
           _disabled: { opacity: 0.5, cursor: 'not-allowed' },
         }),
-        secondary: (props: any) => ({
+        secondary: (props: StyleFunctionProps) => ({
           bg: 'transparent',
           color: mode('ink.700', 'paper.100')(props),
           border: '1px solid',
@@ -141,7 +141,7 @@ const theme = Chakra.extendTheme({
           _hover: { bg: mode('rgba(91,141,239,0.06)', 'rgba(255,255,255,0.06)')(props), transform: 'translateY(-1px)' },
           _active: { transform: 'translateY(0)' },
         }),
-        ghost: (props: any) => ({
+        ghost: (props: StyleFunctionProps) => ({
           bg: 'transparent',
           color: mode('ink.700', 'paper.100')(props),
           _hover: { bg: mode('rgba(91,141,239,0.08)', 'rgba(255,255,255,0.08)')(props), transform: 'translateY(-1px)' },
@@ -157,7 +157,7 @@ const theme = Chakra.extendTheme({
       defaultProps: { variant: 'primary' },
     },
     Card: {
-      baseStyle: (props: any) => ({
+      baseStyle: (props: StyleFunctionProps) => ({
         container: {
           bg: mode('paper.50', 'paper.900')(props),
           border: '1px solid',
@@ -169,7 +169,7 @@ const theme = Chakra.extendTheme({
     },
     Input: {
       variants: {
-        outline: (props: any) => ({
+        outline: (props: StyleFunctionProps) => ({
           field: {
             borderRadius: 'lg',
             bg: mode('paper.50', 'paper.900')(props),
@@ -182,7 +182,7 @@ const theme = Chakra.extendTheme({
       defaultProps: { variant: 'outline' },
     },
     Tabs: {
-      baseStyle: (props: any) => ({
+      baseStyle: (props: StyleFunctionProps) => ({
         tab: {
           fontWeight: 600,
           borderRadius: 'pill',
@@ -201,7 +201,7 @@ const theme = Chakra.extendTheme({
       }),
     },
     Divider: {
-      baseStyle: (props: any) => ({
+      baseStyle: (props: StyleFunctionProps) => ({
         borderColor: mode('rgba(12,18,31,0.08)', 'rgba(255,255,255,0.12)')(props),
       }),
     },

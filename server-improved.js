@@ -2,6 +2,8 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const next = require('next');
 
+const { processRound } = require('./src/server/game-logic');
+
 // Set environment variables to avoid permission issues
 process.env.NEXT_TELEMETRY_DISABLED = '1';
 process.env.NEXT_PRIVATE_SKIP_VALIDATION = '1';
@@ -129,15 +131,31 @@ app.prepare().then(() => {
         if (player) {
           const room = gameRooms.get(player.roomId);
           if (room) {
+            // Check if it's a host update for another player
+            if (data.playerId && data.playerId !== socket.id && socket.id === room.host) {
+               const targetPlayer = room.players.get(data.playerId);
+               if (targetPlayer) {
+                 targetPlayer.state = { ...targetPlayer.state, ...data.state };
+                 
+                 // Broadcast to all (including target)
+                 io.to(player.roomId).emit('player-state-updated', {
+                   playerId: data.playerId,
+                   state: data.state
+                 });
+               }
+            } else {
+              // Normal self-update
             const roomPlayer = room.players.get(socket.id);
             if (roomPlayer) {
-              roomPlayer.state = { ...roomPlayer.state, ...data };
+                // Handle both formats: { key: value } or { state: { key: value } }
+                const updateData = data.state || data;
+                roomPlayer.state = { ...roomPlayer.state, ...updateData };
               
-              // Broadcast state update to all players in room
               socket.to(player.roomId).emit('player-state-updated', {
                 playerId: socket.id,
-                state: data
+                  state: updateData
               });
+              }
             }
           }
         }
@@ -210,6 +228,23 @@ app.prepare().then(() => {
         }
       } catch (error) {
         console.error('[RPC] Error handling RPC call:', error);
+      }
+    });
+
+    // Handle process-round event (Host triggers this)
+    socket.on('process-round', () => {
+      console.log('[GAME-LOGIC] Processing round request from:', socket.id);
+      
+      try {
+        const player = players.get(socket.id);
+        if (player) {
+          const room = gameRooms.get(player.roomId);
+          if (room && socket.id === room.host) {
+            processRound(room, io);
+          }
+        }
+      } catch (error) {
+        console.error('[GAME-LOGIC] Error processing round:', error);
       }
     });
 

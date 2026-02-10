@@ -70,7 +70,7 @@ function createPlayerState(playerData: any): PlayerState {
       if (socket) {
         // If updating self
         if (playerState.id === currentPlayer?.id) {
-           socket.emit('update-player-state', { [key]: value });
+        socket.emit('update-player-state', { [key]: value });
            
            // Trigger callbacks for own state updates
            playersUpdateCallbacks.forEach(callback => {
@@ -257,6 +257,14 @@ export function myPlayer(): PlayerState | null {
 export function onPlayerJoin(callback: (player: PlayerState) => void): void {
   console.log('[CALLBACK] Registering player join callback');
   playerJoinCallbacks.push(callback);
+}
+
+// Trigger server-side round processing (Host only)
+export function processRound(): void {
+  if (socket && isHostPlayer) {
+    console.log('[GAME-LOGIC] Requesting server to process round');
+    socket.emit('process-round');
+  }
 }
 
 // Hook for multiplayer state (replaces useMultiplayerState)

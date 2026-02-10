@@ -1,5 +1,6 @@
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const { processRound } = require('./src/server/game-logic');
 
 const port = process.env.SOCKET_PORT || 3001;
 
@@ -12,7 +13,12 @@ console.log('[SOCKET-SERVER] Starting Socket.IO server...');
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: [
+      "http://localhost:3000", 
+      "http://localhost:3001",
+      "https://prosperitylake.club",
+      "https://www.prosperitylake.club"
+    ],
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -99,14 +105,31 @@ io.on('connection', (socket) => {
       if (player) {
         const room = gameRooms.get(player.roomId);
         if (room) {
-          const roomPlayer = room.players.get(socket.id);
-          if (roomPlayer) {
-            roomPlayer.state = { ...roomPlayer.state, ...data };
-            
-            socket.to(player.roomId).emit('player-state-updated', {
-              playerId: socket.id,
-              state: data
-            });
+          // Check if it's a host update for another player
+          if (data.playerId && data.playerId !== socket.id && socket.id === room.host) {
+             const targetPlayer = room.players.get(data.playerId);
+             if (targetPlayer) {
+               targetPlayer.state = { ...targetPlayer.state, ...data.state };
+               
+               // Broadcast to all (including target)
+               io.to(player.roomId).emit('player-state-updated', {
+                 playerId: data.playerId,
+                 state: data.state
+               });
+             }
+          } else {
+            // Normal self-update
+            const roomPlayer = room.players.get(socket.id);
+            if (roomPlayer) {
+              // Handle both formats: { key: value } or { state: { key: value } }
+              const updateData = data.state || data;
+              roomPlayer.state = { ...roomPlayer.state, ...updateData };
+              
+              socket.to(player.roomId).emit('player-state-updated', {
+                playerId: socket.id,
+                state: updateData
+              });
+            }
           }
         }
       }
@@ -179,7 +202,24 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle player disconnection
+    // Handle process-round event (Host triggers this)
+    socket.on('process-round', () => {
+      console.log('[GAME-LOGIC] Processing round request from:', socket.id);
+      
+      try {
+        const player = players.get(socket.id);
+        if (player) {
+          const room = gameRooms.get(player.roomId);
+          if (room && socket.id === room.host) {
+            processRound(room, io);
+          }
+        }
+      } catch (error) {
+        console.error('[GAME-LOGIC] Error processing round:', error);
+      }
+    });
+
+    // Handle player disconnection
   socket.on('disconnect', () => {
     console.log('[DISCONNECT] User disconnected:', socket.id);
     

@@ -19,54 +19,36 @@ export default function ResultadoFinal(resultadoFinalProps: ResultadoFinalProps)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+    <div className="relative w-full max-w-3xl rounded-2xl bg-white/90 shadow-xl border border-gray-200 p-8 mx-auto">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Resultado</h1>
+        <h2 className="text-xl font-semibold text-gray-700 mb-6">Ranking</h2>
 
-      {/* Modal */}
-      <div className="relative w-full max-w-md rounded-lg bg-white p-8 shadow-xl">
-        {/* Close button */}
+        <ol className="space-y-3 mb-8">
+          {resultadoFinalProps.jogadores?.sort(
+            (a, b) => b.getState(PEIXES_CESTO) - a.getState(PEIXES_CESTO)
+          ).map((jogador, index) => (
+            <li
+              key={jogador.id}
+              className={`flex justify-between items-center p-3 rounded-lg ${index === 0 ? 'bg-yellow-100' : 'bg-gray-50'
+                }`}
+            >
+              <span className="font-medium">{jogador.getProfile().name}</span>
+              <span className="text-blue-600 font-bold">
+                {jogador.getState(PEIXES_CESTO)?.toFixed(1)} peixes
+              </span>
+            </li>
+          ))}
+        </ol>
+        <h3 className="font-semibold text-gray-800">Resultado da Banca</h3>
+        <p className="text-gray-700 mb-6">Quantidade final da Banca: {resultadoFinalProps.quantidadeBanca}</p>
+
         <button
           onClick={handleResultadoClick}
-          className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className={(resultadoFinalProps.isAguardando ? `bg-cyan-600 text-gray` : `bg-cyan-800 text-white`) + " rounded-md border-2 px-4 py-2 mb-4 w-full"}
         >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          {resultadoFinalProps.isAguardando ? "Aguardando demais jogadores..." : "Reiniciar"}
         </button>
-
-        {/* Content */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Resultado</h1>
-          <h2 className="text-xl font-semibold text-gray-700 mb-6">Ranking</h2>
-
-          <ol className="space-y-3 mb-8">
-            {resultadoFinalProps.jogadores?.sort(
-              (a, b) => b.getState(PEIXES_CESTO) - a.getState(PEIXES_CESTO)
-            ).map((jogador, index) => (
-              <li
-                key={jogador.id}
-                className={`flex justify-between items-center p-3 rounded-lg ${index === 0 ? 'bg-yellow-100' : 'bg-gray-50'
-                  }`}
-              >
-                <span className="font-medium">{jogador.getProfile().name}</span>
-                <span className="text-blue-600 font-bold">
-                  {jogador.getState(PEIXES_CESTO)?.toFixed(1)} peixes
-                </span>
-              </li>
-            ))}
-          </ol>
-          <h3>Resultado da Banca</h3>
-          <p>Quantidade final da Banca: {resultadoFinalProps.quantidadeBanca}</p>
-
-          {/* Restart button className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"*/}
-          <button
-            onClick={handleResultadoClick}
-            className={(resultadoFinalProps.isAguardando ? `bg-cyan-600 text-gray` : `bg-cyan-800 text-white`) + " rounded-md border-2 px-4 py-2 mb-4 w-full"}
-          >
-            {resultadoFinalProps.isAguardando ? "Aguardando demais jogadores..." : "Reiniciar"}
-          </button>
-        </div>
       </div>
     </div>
   );

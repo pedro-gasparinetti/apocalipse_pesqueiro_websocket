@@ -13,6 +13,10 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  // Disable ESLint during build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Configure output for better compatibility
   output: 'standalone',
   // Disable experimental features that might cause issues

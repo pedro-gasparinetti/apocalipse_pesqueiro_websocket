@@ -20,4 +20,4 @@ echo "📊 Status dos containers:"
 docker-compose ps
 echo ""
 echo "📝 Ver logs: docker-compose logs -f"
-echo "🌐 Acessar: http://$(hostname -I | awk '{print $1}'):3000"
+echo "🌐 Acessar: http://$(hostname -I | awk '{print $1}'):8000"

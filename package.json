@@ -13,7 +13,11 @@
     "clean": "rmdir /s /q .next 2>nul || echo \"Clean completed\"",
     "db:setup": "node db/setup-database.js",
     "db:test": "node -e \"require('./src/server/database').testConnection()\"",
-    "db:query": "node db/query-examples.js"
+    "db:query": "node db/query-examples.js",
+    "deploy": "docker-compose up -d --build",
+    "deploy:logs": "docker-compose logs -f",
+    "deploy:stop": "docker-compose down",
+    "deploy:restart": "docker-compose restart"
   },
   "dependencies": {
     "@types/pg": "^8.16.0",

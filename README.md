@@ -1,3 +1,31 @@
+# Apocalipse Pesqueiro - Jogo Experimental
+
+Um jogo multiplayer sobre gestão sustentável de recursos naturais.
+
+## 🚀 Deploy no Kamatera (MAIS SIMPLES)
+
+Como você já tem Docker rodando no Kamatera:
+
+### 1. Configuração Inicial (uma vez só)
+```bash
+git clone seu-repo-url
+cd apocalipse_pesqueiro_websocket
+cp .env.production .env
+nano .env  # Edite com sua senha e IP
+docker-compose up -d --build
+```
+
+### 2. Para atualizar (sempre que mudar código)
+```bash
+./deploy.sh
+```
+
+**Pronto!** Veja o guia completo em [SETUP_INICIAL.md](SETUP_INICIAL.md)
+
+---
+
+## 💻 Desenvolvimento Local
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
@@ -20,6 +48,17 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
+---
+
+## 📚 Documentação
+
+- **[SETUP_INICIAL.md](SETUP_INICIAL.md)** - Configure o servidor Kamatera (5 minutos)
+- **[DEPLOY_SIMPLES.md](DEPLOY_SIMPLES.md)** - Comandos de deploy e atualização
+- **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Guia completo do Docker
+- **[DROPBOX_BUILD_FIX.md](DROPBOX_BUILD_FIX.md)** - Resolver problemas de build local
+
+---
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
@@ -28,9 +67,3 @@ To learn more about Next.js, take a look at the following resources:
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.

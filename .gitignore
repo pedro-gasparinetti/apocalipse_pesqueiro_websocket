@@ -28,6 +28,7 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.production
 
 # vercel
 .vercel
@@ -35,3 +36,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Docker volumes
+postgres_data/
+app_logs/
+
+# Logs directory
+logs/
+*.log

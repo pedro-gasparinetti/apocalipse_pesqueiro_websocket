@@ -17,7 +17,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Configure output for better compatibility
+  // Configure output for Docker deployment
   output: 'standalone',
   // Disable experimental features that might cause issues
   experimental: {

@@ -5,7 +5,13 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     // Basic health check
-    const health = {
+    const health: {
+      status: string;
+      timestamp: string;
+      uptime: number;
+      environment: string | undefined;
+      database?: string;
+    } = {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),

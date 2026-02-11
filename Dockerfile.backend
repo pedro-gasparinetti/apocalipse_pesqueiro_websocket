@@ -14,13 +14,18 @@ COPY db ./db
 # Create logs directory
 RUN mkdir -p logs
 
+# Create entrypoint script
+RUN echo '#!/bin/sh' > /app/docker-entrypoint-backend.sh && \
+    echo 'set -e' >> /app/docker-entrypoint-backend.sh && \
+    echo 'echo "⏳ Waiting for PostgreSQL..."' >> /app/docker-entrypoint-backend.sh && \
+    echo 'until node -e "const {Pool} = require(\"pg\"); const pool = new Pool({host: process.env.DB_HOST, port: process.env.DB_PORT, database: process.env.DB_NAME, user: process.env.DB_USER, password: process.env.DB_PASSWORD}); pool.query(\"SELECT 1\").then(() => {console.log(\"DB ready\"); process.exit(0);}).catch(() => process.exit(1));" 2>/dev/null; do sleep 2; done' >> /app/docker-entrypoint-backend.sh && \
+    echo 'echo "✅ PostgreSQL ready!"' >> /app/docker-entrypoint-backend.sh && \
+    echo 'echo "📊 Setting up database..."' >> /app/docker-entrypoint-backend.sh && \
+    echo 'node db/setup-database.js || echo "⚠️  Database already exists"' >> /app/docker-entrypoint-backend.sh && \
+    echo 'echo "🚀 Starting Socket.IO backend..."' >> /app/docker-entrypoint-backend.sh && \
+    echo 'exec node server.js' >> /app/docker-entrypoint-backend.sh && \
+    chmod +x /app/docker-entrypoint-backend.sh
+
 EXPOSE 3005
 
-# Health check endpoint
-RUN echo 'const http = require("http"); \
-const server = http.createServer((req, res) => { \
-  if (req.url === "/health") { res.writeHead(200); res.end("OK"); } \
-}); \
-server.listen(process.env.SOCKET_PORT || 3005);' > health.js
-
-CMD ["node", "server.js"]
+ENTRYPOINT ["/app/docker-entrypoint-backend.sh"]

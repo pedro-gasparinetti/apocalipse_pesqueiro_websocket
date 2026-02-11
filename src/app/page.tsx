@@ -334,7 +334,7 @@ export default function LandingPage() {
             <Flex gap={3} flexWrap="wrap">
               <Button
                 as="a"
-                href="/play"
+                href="/dashboard"
                 size="lg"
                 rightIcon={<FiArrowRight />}
                 {...primaryButtonProps}

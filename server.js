@@ -24,7 +24,14 @@ console.log('[SOCKET-SERVER] Starting Socket.IO server...');
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: [
+      "http://localhost:3000", 
+      "http://localhost:3001",
+      "https://backend.prosperitylake.club",
+      "http://backend.prosperitylake.club",
+      /\.vercel\.app$/,  // Aceita qualquer domínio .vercel.app
+      /^https?:\/\/(.*\.)?prosperitylake\.club$/  // Aceita qualquer subdomínio
+    ],
     methods: ["GET", "POST"],
     credentials: true
   }

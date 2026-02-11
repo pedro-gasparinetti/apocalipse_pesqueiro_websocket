@@ -20,7 +20,7 @@ DB_PORT=5432
 DB_NAME=apocalipse_pesqueiro
 DB_USER=postgres
 DB_PASSWORD=ColoqueSenhaForteAqui123!
-NEXT_PUBLIC_SOCKET_URL=http://SEU_IP_DO_SERVIDOR:8001
+NEXT_PUBLIC_SOCKET_URL=http://backend.prosperitylake.club:3006
 NODE_ENV=production
 ```
 
@@ -46,8 +46,9 @@ Pressione `Ctrl+C` para sair dos logs.
 ## ✅ Pronto!
 
 Acesse no navegador:
-- **http://SEU_IP:8000** (aplicação)
-- **http://SEU_IP:8000/api/health** (status)
+- **https://backend.prosperitylake.club** (aplicação via nginx)
+- **http://SEU_IP:3005** (aplicação direta)
+- **http://SEU_IP:3005/api/health** (status)
 
 ---
 

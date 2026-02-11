@@ -1,0 +1,26 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy backend files
+COPY server.js ./
+COPY src/server ./src/server
+COPY db ./db
+
+# Create logs directory
+RUN mkdir -p logs
+
+EXPOSE 3005
+
+# Health check endpoint
+RUN echo 'const http = require("http"); \
+const server = http.createServer((req, res) => { \
+  if (req.url === "/health") { res.writeHead(200); res.end("OK"); } \
+}); \
+server.listen(process.env.SOCKET_PORT || 3005);' > health.js
+
+CMD ["node", "server.js"]

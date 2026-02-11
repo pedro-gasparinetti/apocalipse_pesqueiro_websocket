@@ -2,25 +2,37 @@
 
 Um jogo multiplayer sobre gestão sustentável de recursos naturais.
 
-## 🚀 Deploy no Kamatera (MAIS SIMPLES)
+## 🏗️ Arquitetura
 
-Como você já tem Docker rodando no Kamatera:
+- **Frontend**: Vercel (Next.js)
+- **Backend**: Kamatera (Socket.IO + PostgreSQL + APIs)
 
-### 1. Configuração Inicial (uma vez só)
+## 🚀 Deploy Backend no Kamatera
+
+### Setup rápido:
 ```bash
 git clone seu-repo-url
 cd apocalipse_pesqueiro_websocket
 cp .env.production .env
-nano .env  # Edite com sua senha e IP
-docker-compose up -d --build
+nano .env  # Configure senha e variáveis
+docker-compose -f docker-compose.backend.yml up -d --build
 ```
 
-### 2. Para atualizar (sempre que mudar código)
+### Para atualizar:
 ```bash
-./deploy.sh
+./deploy-backend.sh
 ```
 
-**Pronto!** Veja o guia completo em [SETUP_INICIAL.md](SETUP_INICIAL.md)
+**Veja o guia completo:** [DEPLOY_BACKEND_ONLY.md](DEPLOY_BACKEND_ONLY.md)
+
+---
+
+## ⚙️ Configurar Vercel (Frontend)
+
+No Vercel, adicione esta variável de ambiente:
+```env
+NEXT_PUBLIC_SOCKET_URL=https://backend.prosperitylake.club
+```
 
 ---
 

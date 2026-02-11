@@ -20,4 +20,5 @@ echo "📊 Status dos containers:"
 docker-compose ps
 echo ""
 echo "📝 Ver logs: docker-compose logs -f"
-echo "🌐 Acessar: http://$(hostname -I | awk '{print $1}'):8000"
+echo "🌐 Acessar: http://$(hostname -I | awk '{print $1}'):3005"
+echo "🌐 Ou via nginx: https://backend.prosperitylake.club"
